@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AIP-C01 exam prep: learn AWS Generative AI with one real company-chat story, short chapters, quizzes, and a mock exam. Works from file://.">
+  <title>AIP-C01 · AWS Generative AI Developer Professional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <noscript>
+    <p class="card view-inner" style="margin:24px;position:relative;z-index:50;padding:20px">
+      JavaScript is required for this AIP-C01 exam prep site (chapters, quizzes, and mock exam). Enable JavaScript and reload. Classic script tags are used so the page also works from a local <code>file://</code> URL.
+    </p>
+  </noscript>
+
+  <div class="grid-bg" aria-hidden="true"></div>
+  <div class="scrim" id="scrim" aria-hidden="true"></div>
+
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Course sidebar">
+      <a class="sidebar-brand" href="#/" aria-label="AIP-C01 Prep home">
+        <div class="logo-mark" aria-hidden="true">AI</div>
+        <div>
+          <strong>AIP-C01 Prep</strong>
+          <span>GenAI Developer Professional</span>
+        </div>
+      </a>
+
+      <section class="progress-panel" aria-labelledby="progressLabel">
+        <div class="lbl">
+          <span id="progressLabel">Learning progress</span>
+          <span id="progressCount">0 / 28</span>
+        </div>
+        <div class="progress-bar" role="progressbar" aria-labelledby="progressLabel" aria-describedby="progressAscii" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <i id="progressFill"></i>
+        </div>
+        <div class="progress-ascii" id="progressAscii">░░░░░░░░░░░░░░ 0%</div>
+      </section>
+
+      <nav class="sidebar-nav" id="sidebarNav" aria-label="Learning path"></nav>
+
+      <footer class="sidebar-foot">
+        <a href="#/bank">Question bank</a>
+        <a href="#/exam">Full mock exam</a>
+        <a href="#/stats">Question stats</a>
+        <button type="button" data-act="reset-progress">Reset chapter progress</button>
+        <button type="button" data-act="reset-quiz">Reset quiz stats</button>
+        <a href="../../index.html">Back to learning repo</a>
+      </footer>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Open course menu" aria-controls="sidebar">☰</button>
+        <div class="topbar-title" id="topTitle">AIP-C01</div>
+        <div class="topbar-actions">
+          <a class="btn" href="#/exam">Mock exam</a>
+        </div>
+      </header>
+      <main class="view" id="view" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <script src="js/ns.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/study-guide.js"></script>
+  <script src="js/chapters.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/content/00-architecture-overview.js"></script>
+  <script src="js/content/01-genai-foundations.js"></script>
+  <script src="js/content/02-choosing-a-foundation-model.js"></script>
+  <script src="js/content/03-amazon-bedrock.js"></script>
+  <script src="js/content/04-prompt-engineering.js"></script>
+  <script src="js/content/05-application-integration.js"></script>
+  <script src="js/content/06-data-ingestion.js"></script>
+  <script src="js/content/07-embeddings.js"></script>
+  <script src="js/content/08-vector-databases.js"></script>
+  <script src="js/content/09-rag.js"></script>
+  <script src="js/content/10-bedrock-knowledge-bases.js"></script>
+  <script src="js/content/11-agents.js"></script>
+  <script src="js/content/12-agent-tools.js"></script>
+  <script src="js/content/13-workflow-orchestration.js"></script>
+  <script src="js/content/14-memory-and-state.js"></script>
+  <script src="js/content/15-safety-and-guardrails.js"></script>
+  <script src="js/content/16-security-and-privacy.js"></script>
+  <script src="js/content/17-governance.js"></script>
+  <script src="js/content/18-evaluation.js"></script>
+  <script src="js/content/19-observability.js"></script>
+  <script src="js/content/20-performance.js"></script>
+  <script src="js/content/21-cost-optimization.js"></script>
+  <script src="js/content/22-deployment.js"></script>
+  <script src="js/content/23-cicd.js"></script>
+  <script src="js/content/24-troubleshooting.js"></script>
+  <script src="js/content/25-architecture-patterns.js"></script>
+  <script src="js/content/26-exam-decision-guide.js"></script>
+  <script src="js/content/27-final-architecture.js"></script>
+  <!-- Missing examtopics-pXX.js files should be empty stubs: AIP.registerQuestions([]); so file:// loads do not 404. -->
+  <script src="js/questions/examtopics-p01.js"></script>
+  <script src="js/questions/examtopics-p02.js"></script>
+  <script src="js/questions/examtopics-p03.js"></script>
+  <script src="js/questions/examtopics-p04.js"></script>
+  <script src="js/questions/examtopics-p05.js"></script>
+  <script src="js/questions/examtopics-p06.js"></script>
+  <script src="js/questions/examtopics-p07.js"></script>
+  <script src="js/questions/examtopics-p08.js"></script>
+  <script src="js/questions/examtopics-p09.js"></script>
+  <script src="js/questions/examtopics-p10.js"></script>
+  <script src="js/questions/examtopics-p11.js"></script>
+  <script src="js/questions/examtopics-p12.js"></script>
+  <script src="js/questions/certsafari-p01.js"></script>
+  <script src="js/questions/certsafari-p02.js"></script>
+  <script src="js/questions/certsafari-p03.js"></script>
+  <script src="js/questions/certsafari-p04.js"></script>
+  <script src="js/questions/certsafari-p05.js"></script>
+  <script src="js/questions/certsafari-p06.js"></script>
+  <script src="js/questions/certsafari-p07.js"></script>
+  <script src="js/questions/certsafari-p08.js"></script>
+  <script src="js/questions/certsafari-p09.js"></script>
+  <script src="js/questions/certsafari-p10.js"></script>
+  <script src="js/questions/certsafari-p11.js"></script>
+  <script src="js/questions/certsafari-p12.js"></script>
+  <script src="js/questions/certsafari-p13.js"></script>
+  <script src="js/questions/certsafari-p14.js"></script>
+  <script src="js/questions/certsafari-p15.js"></script>
+  <script src="js/questions/certsafari-p16.js"></script>
+  <script src="js/questions/certsafari-p17.js"></script>
+  <script src="js/questions/certsafari-p18.js"></script>
+  <script src="js/questions/certsafari-p19.js"></script>
+  <script src="js/questions/certsafari-p20.js"></script>
+  <script src="js/questions/certsafari-p21.js"></script>
+  <script src="js/questions/certsafari-p22.js"></script>
+  <script src="js/questions/certsafari-p23.js"></script>
+  <script src="js/questions/certsafari-p24.js"></script>
+  <script src="js/questions/certsafari-p25.js"></script>
+  <script src="js/questions/certsafari-p26.js"></script>
+  <script src="js/questions/certsafari-p27.js"></script>
+  <script src="js/questions/certsafari-p28.js"></script>
+  <script src="js/questions/certsafari-p29.js"></script>
+  <script src="js/questions/certsafari-p30.js"></script>
+  <script src="js/questions/certsafari-p31.js"></script>
+  <script src="js/questions/certsafari-p32.js"></script>
+  <script src="js/questions/certsafari-p33.js"></script>
+  <script src="js/questions/certsafari-p34.js"></script>
+  <script src="js/questions/certsafari-p35.js"></script>
+  <script src="js/questions/certsafari-p36.js"></script>
+  <script src="js/questions/practice.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/question-bank.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

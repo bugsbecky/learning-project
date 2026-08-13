@@ -1,0 +1,2402 @@
+[
+  {
+    "questionNum": 1,
+    "total": 60,
+    "domain": "2.2 Implement model deployment strategies",
+    "stem": "A SaaS provider wants to offer generative AI features to thousands of distinct tenants. They have fine-tuned a base Llama 3 model using Low-Rank Adaptation (LoRA) specifically for each tenant. Deploying a dedicated endpoint for each tenant is cost-prohibitive. Which deployment strategy allows serving these thousands of adapters cost-effectively with the lowest latency?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Deploy a single SageMaker Real-time endpoint and load the specific LoRA adapter from S3 dynamically into the model memory for every single inference request.",
+        "explanation": "This approach is incorrect because loading a LoRA adapter from S3 and into GPU memory for every single inference request would introduce significant I/O and model-loading latency. This makes it impractical for a low-latency application, as the performance overhead on each call would be unacceptably high.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Deploy the base model to SageMaker Serverless Inference and pass the adapter weights as part of the API payload.",
+        "explanation": "This approach is incorrect and impractical. Passing adapter weights as part of the API payload would significantly increase payload size, leading to increased network latency and potential violations of service limits. Furthermore, SageMaker Serverless Inference is optimized for intermittent workloads and can introduce cold-start latency, which is unsuitable for an application requiring consistently low latency. It also lacks the sophisticated caching mechanism that MME provides.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use SageMaker Multi-Model Endpoints (MME) with GPU support to co-host the base model and dynamically load the LoRA adapters.",
+        "explanation": "This is the correct and most efficient solution. SageMaker Multi-Model Endpoints (MME) on GPU instances are specifically designed for this use case. They allow a single endpoint to host a shared base model while dynamically loading and caching numerous smaller models or adapters (like LoRA) from S3 on demand. The first request for a specific tenant's adapter will incur a loading penalty, but subsequent requests will be served with very low latency from the in-memory cache. This allows for massive cost savings by sharing expensive GPU resources across thousands of tenants.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Bedrock Agents to route requests to different fine-tuned models based on the Tenant ID.",
+        "explanation": "This is incorrect. Amazon Bedrock Agents are an orchestration service for creating multi-step tasks and interacting with APIs, not a model hosting solution. Using an Agent to route to thousands of individually deployed fine-tuned models would be extremely expensive and complex, failing to solve the core cost-prohibitive problem. This misapplies the purpose of Bedrock Agents.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 2,
+    "total": 60,
+    "domain": "3.4 Implement responsible AI principles",
+    "stem": "An e-commerce company is launching a product recommendation bot. The legal team mandates that the bot must strictly avoid discussing political topics or offering legal advice. The development team has tried prompt engineering, but the model still occasionally generates prohibited content during adversarial testing. They need a deterministic, low-latency safeguard that does not require retraining the model. Which solution should they implement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Implement an AWS Lambda function that uses a regex library to scan the generated text for political keywords after the full response is received.",
+        "explanation": "This approach is not ideal because it involves post-processing the model's full response, which can introduce latency. A regular expression (regex) based filter is often brittle, as it can be easily bypassed by nuanced or paraphrased language and is difficult to maintain. It only detects prohibited content after it has been generated, rather than preventing its generation.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Fine-tune the model on a dataset consisting only of product descriptions to remove knowledge of politics and law.",
+        "explanation": "This option is incorrect because fine-tuning is a form of retraining, which is explicitly prohibited by the requirements. Furthermore, fine-tuning does not guarantee the complete removal of unwanted knowledge and is not a deterministic, low-latency runtime safeguard against adversarial inputs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Configure Amazon Bedrock Guardrails with specific 'Topic Deny' filters for politics and legal advice and apply this guardrail to the model invocation.",
+        "explanation": "This is the correct solution as Amazon Bedrock Guardrails are specifically designed to implement safety policies for generative AI applications. They provide 'Topic Deny' filters that can deterministically block requests and responses related to specific topics like politics and legal advice. This safeguard is applied at the time of model invocation, ensuring low latency without requiring any model retraining, perfectly aligning with all the stated requirements.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Comprehend to analyze the sentiment of the user's prompt and block negative sentiment requests.",
+        "explanation": "This solution is incorrect because the requirement is to filter content based on its topic (politics, legal advice), not its emotional tone. Amazon Comprehend sentiment analysis is the wrong tool for this task and would be ineffective at identifying these specific topics, failing to meet the legal team's mandate.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 3,
+    "total": 60,
+    "domain": "2.4 Implement FM API integrations",
+    "stem": "A developer is building a high-traffic chatbot. To optimize costs, the developer wants to cache identical user queries so that the application does not invoke the Bedrock model for questions that have been answered recently. The matching needs to be exact string matching for efficiency. Which solution is the MOST performant?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Enable API Gateway Caching on the stage and configure the cache key to include the request body. This caches entire API responses based on the request body.",
+        "explanation": "Incorrect. API Gateway caching is not ideal for this use case because its cache key is primarily based on URL path, query strings, and headers. Natively including the request body (which contains the user prompt) in the cache key is not supported and would require custom workarounds, like hashing the body into a custom header. This adds complexity and is less performant than a dedicated in-memory caching service for high-volume, exact-match lookups on request payloads.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement a DynamoDB table to store prompts and responses, and query it before invoking Bedrock. Use the prompt as the partition key for exact match lookups.",
+        "explanation": "Incorrect. While DynamoDB is a high-performance NoSQL database with single-digit millisecond latency for key-value lookups, it is still a disk-backed, network-attached service. An in-memory cache will consistently offer lower latency (sub-millisecond). For a high-traffic application where performance is the primary concern, a dedicated in-memory store is superior to a persistent database for caching.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon ElastiCache (Redis) within the Lambda function. Compute a hash of the prompt, check the cache, and return the stored response if a hit occurs.",
+        "explanation": "Correct. Amazon ElastiCache for Redis is an in-memory data store designed for high-throughput, low-latency caching, providing sub-millisecond response times. By creating a shared cache accessible from all concurrent Lambda invocations (ideally within the same VPC), it ensures a high cache hit rate. Hashing the prompt for a consistent key and checking Redis before calling Bedrock is the most performant and scalable solution for this requirement.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use LangChain's InMemoryCache on the Lambda container instance to store prompt-response pairs. This cache lives in the Lambda execution environment memory.",
+        "explanation": "Incorrect. LangChain's InMemoryCache exists only within the memory of a single Lambda execution environment. In a high-traffic scenario, Lambda scales by creating multiple concurrent environments. The cache would not be shared across these environments, leading to a very low cache-hit ratio and redundant Bedrock API calls. Furthermore, the cache is ephemeral and is lost whenever an execution environment is recycled.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 4,
+    "total": 60,
+    "domain": "1.4 Design and implement vector store solutions",
+    "stem": "A developer is managing a product catalog in Amazon DynamoDB. The marketing team wants to enable \"find similar products\" functionality using vector embeddings. The catalog changes rarely, but read traffic is extremely high. The developer wants to minimize management of new infrastructure components. Which solution is the most appropriate?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Export the DynamoDB table to S3, generate embeddings using Amazon SageMaker, and load them into Amazon Neptune.",
+        "explanation": "Incorrect. This solution involves a complex, multi-step batch process (Export, Process, Load). Additionally, while Amazon Neptune has vector search capabilities, it is primarily a graph database and is not the most optimized or cost-effective choice for a high-read, pure vector similarity search use case compared to a specialized service like OpenSearch.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use the Amazon OpenSearch Ingestion (OSI) pipeline to automatically replicate data from DynamoDB to an OpenSearch Service index for vector search.",
+        "explanation": "Correct. This is the most appropriate solution as it directly addresses all requirements. The Amazon OpenSearch Ingestion (OSI) pipeline is a fully managed service that automates data synchronization from DynamoDB to OpenSearch Service, minimizing management overhead. Amazon OpenSearch Service is designed for high-read search workloads and has robust, scalable k-NN vector search capabilities, making it ideal for the \"find similar products\" functionality.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Enable DynamoDB Streams to trigger a Lambda function that generates embeddings and writes them to a new Amazon OpenSearch Service cluster.",
+        "explanation": "Incorrect. While this approach is functional, it requires the developer to build, manage, and scale a custom streaming pipeline using DynamoDB Streams and AWS Lambda. This increases operational overhead compared to a fully managed ingestion solution, which contradicts the requirement to minimize management.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Store the vector embeddings directly in a DynamoDB attribute as a binary list and perform a table scan with a cosine similarity function in a Lambda resolver.",
+        "explanation": "Incorrect. This is an anti-pattern for performance at scale. DynamoDB lacks native vector search indexes. Performing a table scan for every similarity search request would be extremely slow and costly, failing to meet the 'extremely high read traffic' requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 5,
+    "total": 60,
+    "domain": "4.3 Implement monitoring systems for GenAI applications",
+    "stem": "A startup is using Amazon Bedrock's Provisioned Throughput to guarantee capacity for a critical launch. To optimize costs, the operations team wants to ensure they are utilizing the provisioned units (PMUs) efficiently without over-provisioning. Which metric combination should they monitor to make scaling decisions?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Monitor InputTokenCount and OutputTokenCount relative to the model unit limits.",
+        "explanation": "While InputTokenCount and OutputTokenCount are valuable for understanding token consumption and estimating load, they are not direct indicators of PMU utilization or capacity constraints. Using them for scaling would require complex calculations to translate token rates into PMU consumption, making them less direct and less reliable for real-time scaling decisions compared to the dedicated utilization and throttling metrics.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Monitor LegacyModelInvocations and DiskQueueDepth.",
+        "explanation": "LegacyModelInvocations and DiskQueueDepth are not relevant CloudWatch metrics for Amazon Bedrock Provisioned Throughput. These are distractor options that do not reflect PMU usage or throttling and are therefore not useful for making scaling decisions for Bedrock models.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Monitor ProvisionedThroughputUtilization and ThrottledRequests.",
+        "explanation": "This is the correct combination. ProvisionedThroughputUtilization directly measures the percentage of allocated Provisioned Model Units (PMUs) being used, providing a clear signal of efficiency. ThrottledRequests is a critical indicator that the incoming request rate has exceeded the provisioned capacity. By monitoring both, the team can make informed scaling decisions: scale up when utilization is consistently high or throttling occurs, and scale down when utilization is consistently low to optimize costs.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Monitor InvocationClientErrors and InvocationServerErrors.",
+        "explanation": "InvocationClientErrors and InvocationServerErrors are essential for monitoring the health and reliability of the service. They indicate issues with the API calls themselves, such as invalid input or service-side faults, but they do not provide information about the utilization of provisioned capacity or whether the service is throttling due to traffic volume.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 6,
+    "total": 60,
+    "domain": "1.2 Select and configure FMs",
+    "stem": "A media company is deploying a fine-tuned Stable Diffusion model on Amazon SageMaker for generating images. The model is updated weekly. The operations team requires a strict approval process where a new model version is first evaluated against a standard test set. Only if the evaluation metrics meet a specific threshold should the model be flagged for production deployment. Which SageMaker feature facilitates this governance workflow?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "SageMaker Experiments",
+        "explanation": "Incorrect. SageMaker Experiments is used to track, organize, and compare machine learning training runs, including their parameters and evaluation metrics. While the evaluation step would be tracked as part of an experiment, Experiments itself does not offer the formal governance and approval mechanism to gate model promotion to production. The Model Registry is the service that consumes the output of an experiment (the model and its metrics) to manage its deployment lifecycle.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "SageMaker Clarify",
+        "explanation": "Incorrect. SageMaker Clarify focuses on Responsible AI by providing tools for bias detection in data and models, and for explaining model predictions. While important for model evaluation, it does not provide the core functionality for versioning, cataloging, or managing the deployment approval lifecycle.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "SageMaker Model Registry",
+        "explanation": "Correct. SageMaker Model Registry is specifically designed for MLOps governance. It provides a central repository to catalog, version, and manage machine learning models. It supports a formal approval process by allowing you to set explicit statuses for model versions (e.g., 'Pending', 'Approved', 'Rejected'). This enables the required workflow where a model is evaluated, and only promoted to a deployable 'Approved' state if its metrics meet the predefined thresholds.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "SageMaker Model Monitor",
+        "explanation": "Incorrect. SageMaker Model Monitor is used for post-deployment monitoring of machine learning models in production. Its primary function is to detect data drift, concept drift, and model quality issues for an already deployed endpoint, not to manage the pre-deployment approval and governance workflow.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 7,
+    "total": 60,
+    "domain": "2.3 Design and implement enterprise integration architectures",
+    "stem": "An e-commerce platform uses an LLM to generate product descriptions. To reduce costs and latency, the team wants to implement a caching layer. If a user requests a description for 'Red running shoes', and a description for 'Scarlet joggers' was recently generated and is semantically similar enough, the system should return the cached response. Which solution fits this requirement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use Amazon ElastiCache (Redis) to store hash keys of the input prompts. Before calling the LLM, compute the hash of the incoming prompt and check Redis for an exact match; if found, return the cached response.",
+        "explanation": "Incorrect. Hashing input prompts and checking for an exact match in Redis is a key-value caching strategy. A hash of 'Red running shoes' will differ from a hash of 'Scarlet joggers', so semantically similar prompts will not be matched. This fails to meet the requirement of returning cached responses for similar but non-identical prompts.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Enable API Gateway Method Caching with a TTL of 3600 seconds, configuring the cache key to include the entire request query string. This caches responses for exact query string matches.",
+        "explanation": "Incorrect. API Gateway Method Caching relies on exact matches of request attributes such as the query string. It cannot interpret semantic similarity, so a request for 'Red running shoes' would not match a cached response for 'Scarlet joggers'. This approach only serves identical repeated requests.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon CloudFront as a CDN in front of the API Gateway to cache responses based on the request body. Configure CloudFront to forward the entire request body as a cache key.",
+        "explanation": "Incorrect. CloudFront caches responses based on exact matches of the request body or other attributes. It does not perform semantic analysis, so 'Red running shoes' and 'Scarlet joggers' would be treated as distinct requests. This solution cannot identify semantic similarity and would not serve the cached response for a similar prompt.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Implement a semantic cache using a vector database (like Amazon OpenSearch Service) to store embeddings of prompts and responses. Query for similar vectors before invoking the LLM.",
+        "explanation": "Correct. A semantic cache uses a vector database to store embeddings of prompts and responses. When a new prompt arrives, its embedding is compared to stored embeddings using similarity search (e.g., cosine similarity). If a semantically similar prompt is found above a threshold, the cached response is returned, avoiding an LLM call.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 8,
+    "total": 60,
+    "domain": "3.3 Implement AI governance and compliance mechanisms",
+    "stem": "A retail company wants to release a new version of their product recommendation LLM. Before full release, they must perform a 'Shadow Test' to validate safety compliance against live traffic without impacting customers. How should the developer configure the SageMaker Endpoint?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use SageMaker Inference Recommender to simulate production traffic patterns on the new model's instance types, then analyze the resulting latency and throughput metrics to confirm the model meets safety and performance requirements before release.",
+        "explanation": "Incorrect. SageMaker Inference Recommender is used for performance benchmarking and instance type selection via simulated load tests. It does not mirror live production traffic to a model variant, so it cannot validate safety compliance against real-world requests.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Create a new endpoint for the new model and configure the frontend application to duplicate inference requests to both the old and new endpoints, then compare responses to validate safety compliance without impacting customers.",
+        "explanation": "Incorrect. This manual approach requires modifying the frontend application to duplicate requests, which adds complexity and potential latency. It does not leverage SageMaker's built-in shadow deployment feature, making it less efficient and harder to maintain.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Deploy the new model to AWS Lambda and set up VPC-level traffic mirroring to capture a copy of live inference requests, then forward the mirrored traffic to the Lambda function to evaluate the model's responses against safety compliance criteria.",
+        "explanation": "Incorrect. VPC Traffic Mirroring captures network packets at Layer 4, not application-layer HTTP requests, making it impractical for model validation. SageMaker provides a higher-level, integrated shadow deployment feature specifically designed for this use case.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Update the existing endpoint configuration to add a new production variant for the new model. Set the variant weight to 0 and enable shadow deployment to route a copy of the inference requests to the new model.",
+        "explanation": "Correct. Adding a new production variant with zero weight and enabling shadow deployment routes a copy of live inference requests to the new model without affecting customer responses. This allows safety validation against real traffic using SageMaker's native shadow testing capability.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 9,
+    "total": 60,
+    "domain": "3.2 Implement data security and privacy controls",
+    "stem": "A company wants to ensure that developers using Amazon Bedrock in a sandbox account cannot access high-cost models (e.g., Anthropic Claude 3 Opus) and are restricted to using Amazon Titan models only. They also want to prevent the developers from removing any logging configurations. Which IAM policy structure achieves this?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Allow bedrock:InvokeModel with a resource condition arn:aws:bedrock:*::foundation-model/amazon.titan-*. Deny bedrock:DeleteModelInvocationLoggingConfiguration.",
+        "explanation": "Correct. The Allow statement with a resource condition limits bedrock:InvokeModel to foundation models matching amazon.titan-*, effectively restricting access to Titan models only. The explicit Deny on bedrock:DeleteModelInvocationLoggingConfiguration overrides any allow, ensuring logging configurations cannot be removed.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Allow bedrock:* and configure AWS Cost Explorer Budget Actions to stop EC2 instances when the budget is exceeded, preventing high-cost model usage through cost controls.",
+        "explanation": "Incorrect. Granting bedrock:* is overly permissive and violates least privilege, allowing access to all models and actions, including deleting logging configurations. AWS Cost Explorer Budget Actions are a reactive cost management tool, not a proactive access control mechanism, and cannot prevent invocation of specific high-cost models.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Create a Service Control Policy (SCP) at the Organization root that denies bedrock:InvokeModel for all users, restricting access to any model invocation across the organization.",
+        "explanation": "Incorrect. An SCP at the Organization root denying bedrock:InvokeModel would apply to the entire organization, not just the sandbox account, and would block all model invocations, including the allowed Amazon Titan models.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use Tag-based access control to allow bedrock:InvokeModel only if the model resource is tagged Cost:Low, and deny bedrock:DeleteModelInvocationLoggingConfiguration to protect logging.",
+        "explanation": "Incorrect. Foundation models in Amazon Bedrock are AWS-managed resources, and users cannot apply custom tags to them, making tag-based access control infeasible for filtering specific models. This option also does not address preventing deletion of logging configurations.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 10,
+    "total": 60,
+    "domain": "4.2 Optimize application performance",
+    "stem": "A developer observes that an agentic workflow using Amazon Bedrock Agents is running slowly. The trace shows that the agent is sequentially calling three different APIs to gather customer data (Profile, Order History, Returns) before generating a response. These APIs are independent of each other. How can the developer optimize the workflow latency?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Increase the prompt complexity to instruct the model to think step-by-step.",
+        "explanation": "Incorrect. Instructing the model to 'think step-by-step' (a form of Chain-of-Thought prompting) is a technique to improve the model's reasoning and accuracy, not its execution speed. This method typically increases the token count and processing time for the model, which would likely increase overall latency rather than decrease it.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Enable Provisioned Throughput on the Bedrock Agent.",
+        "explanation": "Incorrect. Provisioned Throughput is a feature of Amazon Bedrock *models*, not agents. It is used to guarantee a specific inference rate and reduce model invocation latency. It does not affect the agent's orchestration logic or how it executes calls to external APIs. The bottleneck described is in the sequential execution of tools, not in the model's inference speed.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Modify the action group definition to allow the orchestration trace to execute the API calls in parallel.",
+        "explanation": "Correct. Amazon Bedrock Agents support parallel function calling. Since the three APIs are independent, the agent's orchestrator can be configured to invoke them concurrently. This is the most direct and efficient optimization, reducing the total latency from the sum of the three API call durations to approximately the duration of the single longest-running API call.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Combine the three APIs into a single Lambda function that returns a monolithic JSON object.",
+        "explanation": "Incorrect. While this approach might reduce the number of round trips from the agent, it introduces significant backend complexity, tight coupling, and reduced maintainability by creating a monolithic service. This is an anti-pattern that removes the flexibility of microservices and does not leverage the native capabilities of the agent orchestrator.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 11,
+    "total": 60,
+    "domain": "5.1 Implement evaluation systems for GenAI",
+    "stem": "A chatbot application uses a session-based history to maintain context. Users report that the bot often gets stuck in repetitive loops, repeating the same apology phrase endlessly. To automatically detect this during long-running sessions, which metric should be implemented in the monitoring system?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "User Sentiment Analysis",
+        "explanation": "Incorrect. User sentiment analysis measures the user's emotional state, which might indicate frustration due to the chatbot's looping behavior. However, this is an indirect, lagging indicator of the problem. It measures the effect on the user rather than the root cause in the bot's behavior. The goal is to detect the repetition directly, not the user's reaction to it.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Token Count per Request",
+        "explanation": "Incorrect. The token count per request measures the length of a message, which is primarily useful for monitoring cost and performance. It does not provide any information about the content of the response, and therefore cannot detect if the chatbot is repeating phrases or getting stuck in a conversational loop.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Latency per turn",
+        "explanation": "Incorrect. Latency per turn measures the response time of the chatbot. While this is an important performance metric, it has no correlation with the content of the response. A chatbot can generate repetitive, looping responses with either low or high latency, making this metric ineffective for detecting the issue described.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Repetition Rate (n-gram repetition) within the generated response and across the last N turns of the conversation history",
+        "explanation": "Correct. This metric is specifically designed to detect repetitive content. By analyzing n-grams (contiguous sequences of n items from a given sample of text), the system can identify repeated phrases both within a single response and, crucially, across the last N turns of the conversation. This directly addresses the problem of a chatbot getting stuck in a loop and repeating the same phrases over a session.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 12,
+    "total": 60,
+    "domain": "4.2 Optimize application performance",
+    "stem": "An application uses Amazon Bedrock to generate creative marketing copy. The marketing team wants to test if a new, more expensive model version provides better copy than the current model. The developer needs to compare the performance (conversion rate) of both models on live traffic without negatively affecting the user experience if the new model performs poorly. Which deployment strategy should be used?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Perform an offline evaluation using a fixed validation dataset and BLEU scores.",
+        "explanation": "This is incorrect. Offline evaluation does not use live traffic and therefore cannot measure real-world user behavior or the desired business metric (conversion rate). Furthermore, metrics like BLEU are designed for tasks like machine translation and are poorly correlated with the quality or persuasiveness of creative marketing copy.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement an A/B testing strategy by routing a small percentage of live traffic to the new model variant and analyzing metrics.",
+        "explanation": "This is the correct approach. A/B testing is the industry-standard method for comparing the performance of two or more variants on live traffic. By routing a small, statistically significant portion of users to the new model (variant B) and the rest to the current model (variant A), the team can directly measure the impact on conversion rates while limiting exposure and risk to the overall user base.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Replace the current model with the new model and roll back if user complaints increase (Canary deployment).",
+        "explanation": "This is incorrect. While related to gradual rollouts, this strategy is flawed. A/B testing is specifically designed for comparing performance between variants, whereas canary deployments are primarily for detecting operational issues (like errors or latency) before a full rollout. The described method of a full replacement and rolling back based on user complaints is a high-risk approach that would negatively impact the entire user base before issues are even quantified.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Run both models in parallel for every request and display the result from the model with the lowest latency.",
+        "explanation": "This is incorrect. Running both models in parallel (also known as shadow testing) doubles the inference costs, which is a significant concern as the new model is more expensive. More importantly, selecting the response based on the lowest latency does not help in evaluating which model generates better copy that leads to higher conversion rates. The selection criteria is misaligned with the business goal.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 13,
+    "total": 60,
+    "domain": "3.2 Implement data security and privacy controls",
+    "stem": "A financial services company is building a generative AI application using Amazon Bedrock. The application runs on Amazon EC2 instances inside a private subnet of a VPC. Strict regulatory requirements state that no traffic destined for the AI models can traverse the public internet. The solution must be highly available. Which architecture meets these requirements?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Create an Interface VPC Endpoint (AWS PrivateLink) for Amazon Bedrock and the Amazon Bedrock Runtime. Associate the endpoint with the private subnets and configure Security Groups.",
+        "explanation": "Correct. An Interface VPC Endpoint, powered by AWS PrivateLink, is the designated solution for this scenario. It creates private network interfaces within the VPC's subnets, allowing resources like EC2 instances to communicate with Amazon Bedrock and its runtime endpoints using private IP addresses. This ensures all traffic remains on the secure AWS private network, completely avoiding the public internet. High availability is achieved by deploying endpoints in multiple Availability Zones, and access can be granularly controlled using Security Groups.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Configure a NAT Gateway in a public subnet and update the private subnet route table to route Bedrock traffic through the NAT Gateway.",
+        "explanation": "Incorrect. A NAT Gateway is designed to provide outbound internet access from private subnets. Any traffic routed through it to a public AWS service endpoint, such as Amazon Bedrock, will traverse the public internet, directly violating the core regulatory requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Create a Gateway VPC Endpoint for Amazon Bedrock. Add a route to the Gateway Endpoint in the private subnet route table.",
+        "explanation": "Incorrect. Gateway VPC Endpoints are a specific type of endpoint only supported for Amazon S3 and Amazon DynamoDB. They cannot be used to connect privately to Amazon Bedrock, making this option technically invalid.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Establish an AWS Site-to-Site VPN connection between the corporate data center and the VPC. Route all Bedrock API calls back to the on-premises firewall before sending them to the Bedrock public endpoint.",
+        "explanation": "Incorrect. This architecture is overly complex and fails to meet the requirement. Routing traffic from the VPC to an on-premises data center via VPN, only to then send it out to the public Bedrock endpoint, still involves traversing the public internet. This approach adds unnecessary latency, complexity, and potential points of failure.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 14,
+    "total": 60,
+    "domain": "1.1 Analyze requirements and design GenAI solutions",
+    "stem": "A developer needs to configure an IAM role for an Amazon Bedrock model customization job (fine-tuning). The training data is in an S3 bucket encrypted with a Customer Managed KMS Key. Which permissions must be included in the IAM role passed to Bedrock?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "s3:GetObject on the bucket and kms:Decrypt on the key.",
+        "explanation": "Correct. For a Bedrock model customization job to access training data, the service role it assumes must have two key permissions. First, it needs s3:GetObject to read the training data files from the specified S3 bucket. Second, because the data is encrypted with a Customer Managed KMS Key, the role requires kms:Decrypt permission on that specific key to decrypt the file contents. These two permissions are essential for Bedrock to access and process the encrypted training dataset.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "bedrock:InvokeModel on the base model.",
+        "explanation": "Incorrect. The bedrock:InvokeModel permission is used by an application or user to send prompts and receive responses from a model (i.e., for inference). It is not a permission required by the Bedrock service itself to perform a background model customization or fine-tuning job.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "s3:ListBucket only.",
+        "explanation": "Incorrect. The s3:ListBucket permission alone is insufficient. While listing objects might be part of the process, the core requirement for a fine-tuning job is to read the actual content of the training data files, which this permission does not grant.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "iam:PassRole on the S3 bucket.",
+        "explanation": "Incorrect. The iam:PassRole permission is required for the principal (e.g., the user or role) that *initiates* the Bedrock customization job, not for the service role that Bedrock *assumes* to execute the job. This permission allows the initiating entity to pass a role to an AWS service. It is not part of the permission set of the service role itself, nor is it scoped to an S3 bucket.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 15,
+    "total": 60,
+    "domain": "1.6 Implement prompt engineering strategies and governance for FM interactions",
+    "stem": "A financial services company is deploying an internal research assistant using Amazon Bedrock. The compliance team mandates that the Foundation Model (FM) must strictly refuse to answer any queries related to 'cryptocurrency speculation' and must never output Personally Identifiable Information (PII) such as social security numbers. This enforcement must occur before the model processes the input and before the response is returned to the user, with minimal latency. How should the developer implement this?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Implement an AWS Lambda function to preprocess inputs using regular expressions for PII and post-process outputs using Amazon Comprehend.",
+        "explanation": "Incorrect. This approach introduces significant architectural complexity and latency. Invoking an AWS Lambda function for preprocessing and another service like Amazon Comprehend for post-processing adds multiple network hops. Furthermore, using regular expressions for PII detection can be brittle and incomplete, and this custom solution is less robust and auditable than a native, integrated feature.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Configure Amazon Bedrock Guardrails with a denied topics filter for 'cryptocurrency speculation' and a sensitive information filter for PII. Attach this guardrail to the model invocation.",
+        "explanation": "Correct. Amazon Bedrock Guardrails are the purpose-built feature for this exact use case. They provide a declarative way to enforce policies with minimal latency. A 'denied topics' filter can block queries about 'cryptocurrency speculation' before they are sent to the model. A 'sensitive information' filter can detect and redact PII in both the user's input and the model's generated response, ensuring compliance at both stages of the interaction.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon Bedrock Prompt Flows to route queries containing 'cryptocurrency' keywords to a deterministic end node and use a separate model to scrub PII.",
+        "explanation": "Incorrect. This is an overly complex solution for a policy enforcement requirement. Amazon Bedrock Agents and orchestration flows are designed for multi-step task completion, not for applying universal safety and compliance filters. This method would introduce unnecessary latency, complexity, and potential points of failure compared to the streamlined and purpose-built Guardrails feature.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Develop a complex system prompt with strong negative constraints and few-shot examples demonstrating refusal to answer cryptocurrency questions.",
+        "explanation": "Incorrect. While system prompts and few-shot examples can guide a model's behavior, they are not a reliable enforcement mechanism. The model might still fail to adhere to the instructions, and this method does not guarantee that the check happens before the model processes the input, which is a key compliance requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 16,
+    "total": 60,
+    "domain": "3.2 Implement data security and privacy controls",
+    "stem": "An enterprise is deploying a generative AI chatbot for HR queries. The chatbot utilizes Amazon Bedrock. To comply with privacy laws, the system must ensure that no prompt inputs or model outputs are logged by the model provider (AWS) for service improvement, and the enterprise wants to maintain its own audit trail of all interactions in a centralized S3 bucket for 7 years. Which configuration steps should be taken?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Enable Model Invocation Logging in Amazon Bedrock settings, pointing to an S3 bucket with Object Lock enabled. AWS Bedrock does not use customer inference data to train base models by default.",
+        "explanation": "This is the correct solution. Enabling Model Invocation Logging in Amazon Bedrock is the designated feature for creating an audit trail of prompts and responses. Directing these logs to a customer-controlled S3 bucket meets the centralization requirement. Applying S3 Object Lock on the bucket ensures the logs are immutable and retained for the required 7-year period. This also aligns with the privacy requirement, as AWS Bedrock's default policy is not to use customer inference data for training its base models.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Deploy a custom model on Amazon SageMaker instead of Bedrock. Enable Data Capture on the endpoint configuration to save payloads to S3.",
+        "explanation": "This is incorrect. While deploying a model on Amazon SageMaker and using its Data Capture feature is a valid way to log payloads for that service, the question explicitly states the solution must use Amazon Bedrock. Switching to a different service is not the correct approach and is unnecessary as Bedrock has a native feature to meet the requirements.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Amazon Bedrock automatically logs to CloudWatch Logs. Configure a retention policy of 7 years on the Log Group and enable 'Do Not Track' in the AWS support center.",
+        "explanation": "This is incorrect. Amazon Bedrock does not automatically log invocation payloads to CloudWatch Logs; Model Invocation Logging must be explicitly configured. Furthermore, there is no generic 'Do Not Track' setting in the AWS support center that controls data usage for Bedrock. Data privacy is managed through specific service configurations and account-level opt-out policies.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use a VPC Endpoint for Bedrock. VPC Flow Logs will capture the payload data. Store Flow Logs in S3 for 7 years.",
+        "explanation": "This is incorrect. VPC Flow Logs capture metadata about IP traffic, such as source/destination IP addresses, ports, and byte counts. They do not capture the application-layer payload, which contains the actual text of the prompts and model outputs. Therefore, this method cannot be used for auditing the content of the chatbot interactions.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 17,
+    "total": 60,
+    "domain": "4.1 Implement cost optimization and resource efficiency strategies",
+    "stem": "A developer is conducting a cost-benefit analysis of different Foundation Models for a summarization task. Which metric is the primary determinant of the *direct* usage cost when using Amazon Bedrock On-Demand pricing?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "The amount of memory (RAM) utilized by the model during inference.",
+        "explanation": "Incorrect. In the On-Demand pricing model, Amazon Bedrock provides a serverless experience where the underlying infrastructure, including memory (RAM) utilization, is managed by AWS. Users are not billed directly based on the memory consumed during inference; this is an operational detail abstracted away from the pricing model, which is token-based.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "The latency (time to first byte) of the model response.",
+        "explanation": "Incorrect. Latency is a performance metric that measures the response time of the model. While it is a critical factor for user experience and may indirectly influence the choice of model (where faster models might have different token costs), it is not a metric used for calculating direct usage charges in the On-Demand tier.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "The cumulative count of input tokens processed and output tokens generated.",
+        "explanation": "Correct. Amazon Bedrock's On-Demand pricing model for text generation foundation models is based directly on the amount of data processed, which is measured in tokens. The cost is calculated based on the cumulative count of input tokens sent to the model and output tokens generated by the model, making this the primary determinant of direct usage costs.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "The number of concurrent requests sent to the API.",
+        "explanation": "Incorrect. The number of concurrent requests relates to the throughput and scaling of the application, which influences overall operational capacity, but it is not the direct billing metric for Amazon Bedrock's On-Demand pricing model. Costs are not calculated per API call or per concurrent user.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 18,
+    "total": 60,
+    "domain": "2.3 Design and implement enterprise integration architectures",
+    "stem": "An organization requires all generative AI API calls to be logged centrally for compliance auditing. This includes the request prompt, the response, the model ID, and the latency. They are using Amazon API Gateway fronting a Lambda function that calls Amazon Bedrock. What is the most seamless way to capture this data without adding significant latency?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Write the logs to a local file in the Lambda ephemeral storage and run a sidecar process to upload them to S3. The sidecar can batch and compress the logs before uploading, minimizing impact on the Lambda execution environment.",
+        "explanation": "Incorrect. Writing logs to Lambda ephemeral storage and using a sidecar process is overly complex and fragile. Lambda does not support persistent sidecar processes, and ephemeral storage is lost after execution, risking data loss if the upload fails. This approach is not seamless and can introduce latency or reliability issues.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Configure API Gateway Access Logging and Execution Logging to CloudWatch. Additionally, use AWS X-Ray and embedded metric formats (EMF) in Lambda to capture specific metadata asynchronously.",
+        "explanation": "Correct. API Gateway logging captures request metadata, and AWS X-Ray provides end-to-end latency tracing. Using Embedded Metric Format (EMF) in Lambda writes structured logs (prompt, response, model ID) to CloudWatch asynchronously, adding negligible latency. This combination meets all requirements seamlessly.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Use CloudTrail Data Events to capture the API calls to Bedrock, relying solely on CloudTrail for the prompt and response payload. Configure the trail to log management and data events for Bedrock.",
+        "explanation": "Incorrect. CloudTrail Data Events log API calls but are not designed to capture full request and response payloads reliably. Prompt and response bodies may be truncated or omitted, and log delivery can be delayed. This does not meet the requirement for complete payload logging.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Send the log data to an Amazon Kinesis Data Stream synchronously within the Lambda function before returning the response. The Lambda function writes the prompt, response, model ID, and latency to the stream.",
+        "explanation": "Incorrect. Sending log data synchronously to Kinesis blocks the Lambda response until the write completes, directly increasing API latency. This violates the requirement to avoid significant latency. An asynchronous approach would be needed to minimize impact.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 19,
+    "total": 60,
+    "domain": "1.4 Design and implement vector store solutions",
+    "stem": "A GenAI application uses an embedding model that outputs vectors with 4096 dimensions. The developer chooses Amazon OpenSearch Service for the vector store. The search performance is significantly slower than expected. Upon investigation, the developer realizes the dimension count is very high for the default index settings. What is the most effective way to improve performance without changing the embedding model?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Apply dimensionality reduction using Principal Component Analysis (PCA) before ingestion, or use byte-quantized vectors in OpenSearch to reduce bandwidth and memory pressure.",
+        "explanation": "Correct. Applying PCA reduces vector dimensionality before ingestion, shrinking index size and memory usage while preserving semantic information, which directly accelerates search. Alternatively, using byte-quantized vectors in OpenSearch reduces the memory footprint and I/O overhead, improving performance without altering the embedding model.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Store the vectors in Amazon S3 and use Amazon Athena for the query execution, leveraging Athena's SQL engine to perform approximate nearest neighbor search on the stored embeddings.",
+        "explanation": "Incorrect. Storing vectors in Amazon S3 and querying with Amazon Athena is designed for analytical SQL queries, not low-latency vector similarity search. Athena cannot efficiently perform approximate nearest neighbor operations, resulting in extremely slow and costly queries for this use case.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Increase the ef_construction and m parameters in the HNSW settings to maximum values, and set ef_search to a high value to ensure exhaustive search during queries.",
+        "explanation": "Incorrect. Increasing ef_construction and m to maximum values in HNSW settings leads to larger index sizes and higher memory consumption, which worsens performance for high-dimensional vectors. Setting ef_search high also increases query latency, making this approach counterproductive for improving search speed.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use the nmslib engine instead of faiss in the index settings, and configure the ef_search parameter to a high value to improve recall at the cost of latency.",
+        "explanation": "Incorrect. Switching to the nmslib engine does not address the root cause of slow performance with 4096-dimensional vectors, as both faiss and nmslib face similar challenges with high dimensionality. Additionally, setting ef_search to a high value increases query-time computation, which would further degrade latency rather than improve it.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 20,
+    "total": 60,
+    "domain": "1.6 Implement prompt engineering strategies and governance for FM interactions",
+    "stem": "A developer is creating a conversational AI application where users perform multi-step tasks. The application is stateless, but the LLM requires the full context of the conversation history to provide accurate answers. The conversation history can grow significantly, potentially exceeding the model's context window and increasing costs. Which architecture provides the MOST cost-effective and performant context management?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Store the conversation history in Amazon S3. On each request, retrieve the full object and pass it to the model, relying on S3's durability to persist the growing context across stateless interactions. This approach ensures that every turn includes the complete dialogue.",
+        "explanation": "Incorrect. Storing conversation history in Amazon S3 and retrieving the full object on every request introduces high latency and is not cost-effective for frequent, low-latency reads required by a conversational AI. This approach also fails to manage the growing context, as the entire unmanaged history is sent to the model, risking context window overflow and high token costs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Pass the conversation history back and forth to the client in the HTTP request payload to maintain state without server-side storage. The client includes the full history in each request, and the server appends the latest turn before returning the updated payload.",
+        "explanation": "Incorrect. Passing the full conversation history in HTTP request payloads increases network overhead, can exceed request size limits, and exposes sensitive data to the client. This method provides no mechanism to manage growing context or reduce token costs, and it introduces significant security and scalability risks.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Store conversation history in Amazon DynamoDB. Use an AWS Step Functions workflow to retrieve the history, and if the token count exceeds a threshold, invoke a summarization model to condense older turns before passing the context to the main model.",
+        "explanation": "Correct. Amazon DynamoDB provides low-latency, scalable storage for conversation turns, and AWS Step Functions orchestrates the retrieval and conditional summarization workflow. By invoking a summarization model only when the token count exceeds a threshold, this architecture intelligently condenses older turns, keeping context within the model's limits and minimizing token costs, making it both performant and cost-effective.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon ElastiCache to store the conversation history. Set a Time-to-Live (TTL) of 1 hour to automatically clear old context, and retrieve the full history on each request to pass to the model. This method keeps the context in memory for fast access.",
+        "explanation": "Incorrect. Although Amazon ElastiCache offers fast in-memory access, using a fixed TTL of 1 hour indiscriminately deletes the entire history, potentially disrupting active conversations. It does not address the problem of context growing too large within the TTL window and lacks intelligent pruning or summarization to manage token count and costs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 21,
+    "total": 60,
+    "domain": "1.4 Design and implement vector store solutions",
+    "stem": "A retail company wants to use a Foundation Model to recommend products based on user reviews. They have a massive archive of 5 years of reviews (Cold data) and a smaller set of recent reviews from the last month (Hot data). Search queries must cover both datasets, but latency requirements are stricter for the Hot data. Cost is a major factor. Which OpenSearch Service architecture optimizes for this pattern?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Create a single large index on High I/O instances for all data.",
+        "explanation": "Incorrect. This approach is not cost-effective. Storing all data, including the massive 5-year archive of cold data, on expensive High I/O (Hot) instances would incur significant unnecessary costs, violating the 'cost is a major factor' constraint. It fails to leverage cost-optimization features for data that is infrequently accessed.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use Index State Management (ISM) policies to move indices containing older reviews to UltraWarm and Cold storage tiers while keeping recent indices on Hot nodes.",
+        "explanation": "Correct. This architecture perfectly aligns with the requirements. Amazon OpenSearch Service offers tiered storage: Hot, UltraWarm, and Cold. By using Index State Management (ISM) policies, you can automate the process of keeping recent, frequently accessed 'Hot data' on the fastest nodes for low-latency queries. As data ages, ISM can automatically move it to UltraWarm (which uses Amazon S3 for storage with nodes for caching) and then to Cold storage (fully on S3) for maximum cost savings. Critically, data in all tiers remains searchable, allowing queries to cover the entire dataset while optimizing both performance for recent data and cost for historical data.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon RDS for the cold data and OpenSearch for the hot data, and federate the query in the application layer.",
+        "explanation": "Incorrect. This solution introduces unnecessary architectural complexity and uses the wrong tool for the job. Amazon RDS is a relational database and is not optimized for full-text or vector similarity searches required for this use case. Federating queries in the application layer adds latency and a potential point of failure. OpenSearch Service natively supports the required hot/cold data pattern with its tiered storage, making this hybrid approach inefficient and overly complex.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Store old reviews in Amazon Glacier and restore them only when a user specifically requests a 'historical search'.",
+        "explanation": "Incorrect. This violates the requirement that search queries must cover both datasets simultaneously. Amazon S3 Glacier is an archival service, and data stored in it is not directly searchable. Restoring data from Glacier is a slow process, taking minutes to hours, which is unsuitable for an interactive recommendation system. This approach would make historical data inaccessible for real-time queries.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 22,
+    "total": 60,
+    "domain": "2.1 Implement agentic AI solutions and tool integrations",
+    "stem": "A financial services company is building an agent to automate loan application summaries. Due to regulatory requirements, a human loan officer must review and approve the agent's summary before it is emailed to the client. The review process may take up to 24 hours. Which integration pattern achieves this requirement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use AWS Lambda to generate the summary and invoke an asynchronous approval API, then keep the function warm with a heartbeat mechanism that polls for the human decision for up to 24 hours.",
+        "explanation": "Incorrect. AWS Lambda functions have a maximum execution timeout of 15 minutes, which is far too short for a 24-hour review window. Keeping the function warm with a heartbeat mechanism that polls for the human decision is inefficient, costly, and does not provide a durable solution for long-running processes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use Amazon SQS to queue the summary and a scheduled EventBridge rule to poll for approval status every hour, checking the queue for completed reviews before sending the email to the client.",
+        "explanation": "Incorrect. While a polling mechanism using Amazon SQS and a scheduled EventBridge rule could be constructed, it is inefficient and suboptimal for this scenario. It introduces unnecessary latency (up to an hour between checks), adds complexity to the architecture, and is less reliable than a direct callback mechanism.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use an Agent for Amazon Bedrock with a recursive loop that queries the human approval database every minute, retrieving the status and proceeding upon the officer's recorded decision.",
+        "explanation": "Incorrect. This is a misuse of an Agent for Amazon Bedrock. Agents are designed for orchestrating calls to foundation models and tools to complete a task, not for managing long-running, stateful workflows with human pauses. A recursive polling loop would be highly inefficient, costly due to frequent database queries and agent invocations, and not a robust or reliable pattern for this requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use AWS Step Functions with a standard workflow and the .waitForTaskToken integration pattern to pause the workflow until the human approves via an API call.",
+        "explanation": "Correct. AWS Step Functions standard workflows are designed for long-running, durable orchestrations that can last up to a year. The .waitForTaskToken integration pattern pauses the workflow indefinitely until an external process (such as a human reviewer clicking 'approve' in a UI) sends the task token back via an API call, making it efficient and perfectly suited for this use case.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 23,
+    "total": 60,
+    "domain": "5.2 Troubleshoot GenAI applications",
+    "stem": "A company is running a RAG application using Amazon Bedrock and Amazon OpenSearch Serverless. Users report that when they ask questions requiring information from the middle of long PDF technical manuals, the model often claims the information is missing. The retrieval logs confirm the correct document is returned, but the relevant chunk is not being utilized by the LLM. What is the most effective troubleshooting step to resolve this issue?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Switch to a larger embedding model with a higher dimension count to capture more semantic nuance, and re-index the document corpus to improve retrieval of mid-document passages.",
+        "explanation": "Incorrect. The retrieval is already successful, so the embedding model is not the problem. The issue is in the generation step, and switching to a larger embedding model would increase cost and complexity without fixing the LLM's attention to the provided context.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Increase the temperature of the model to promote broader sampling of the provided context, helping the model attend to information in the middle of long documents that might otherwise be overlooked.",
+        "explanation": "Incorrect. Temperature controls output randomness, not attention to specific parts of the input context. Increasing it would not resolve the 'Lost in the Middle' problem and could lead to less factual responses.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Increase the top_k parameter in the vector search query to return more documents, then apply a custom chunk re-ranking step that prioritizes passages from the middle of the retrieved results.",
+        "explanation": "Incorrect. The retrieval logs already show the correct document is returned, so increasing top_k would add unnecessary documents and noise. The core issue is how the LLM attends to the retrieved context, not the number of documents retrieved.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Implement a 'Lost in the Middle' mitigation strategy by re-ranking retrieved chunks to place the most relevant chunks at the beginning and end of the context window.",
+        "explanation": "Correct. This directly addresses the 'Lost in the Middle' phenomenon, where LLMs attend better to the beginning and end of the context. Re-ranking to place the most relevant chunks in these positions increases the chance the model uses the critical mid-document information.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 24,
+    "total": 60,
+    "domain": "1.3 Implement data validation and processing pipelines for FM consumption",
+    "stem": "A developer is using Amazon Bedrock Guardrails to validate input prompts for a banking chatbot. The chatbot must deny any requests asking for investment advice. While testing, the developer notices the guardrail blocks the request, but the model returns a generic 'Access Denied' message. The developer wants to return a custom, user-friendly message explaining why the request was blocked. How should this be implemented?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Modify the inference application code to catch the AccessDeniedException from the Bedrock API and return a hardcoded string to the user.",
+        "explanation": "This is an incorrect approach because it's a brittle, application-level workaround. Relying on catching a specific exception tightly couples the application logic to a specific error response that could change. It also decentralizes policy enforcement by hardcoding responses in the application instead of managing them centrally within the Guardrails service.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Fine-tune the underlying foundation model to refuse investment advice with the specific phrasing required.",
+        "explanation": "Fine-tuning is an inappropriate, costly, and time-consuming solution for enforcing a content policy and customizing a simple response message. Guardrails are the purpose-built feature for this exact use case, providing a deterministic and configurable safety layer without the significant overhead and unpredictability of altering the model's weights.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "In the Amazon Bedrock Guardrails configuration, edit the 'Blocked messaging' setting for the specific topic policy to define a custom response message.",
+        "explanation": "This is the correct and recommended approach. Amazon Bedrock Guardrails provides a 'Blocked messaging' setting within each denied topic policy. This feature is specifically designed to allow developers to define a custom, user-friendly message that is returned when a prompt is blocked for that topic. It centralizes policy and messaging consistently without requiring changes to application code or infrastructure.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use an AWS Lambda post-processing hook to intercept the Bedrock response. If the response is empty, inject the custom message.",
+        "explanation": "Using a Lambda function for post-processing adds unnecessary architectural complexity, cost, and latency. This approach is also unreliable because it incorrectly assumes a blocked response will be empty; in reality, it may contain specific error metadata from the Guardrail. The built-in configuration is a much more direct and robust solution.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 25,
+    "total": 60,
+    "domain": "1.2 Select and configure FMs",
+    "stem": "An organization is designing a solution to summarize long financial contracts. The contracts exceed the context window of the standard Llama 3 model they selected. They cannot switch models due to licensing constraints. How should the developer architect the solution to handle documents exceeding the context limit?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Truncate the document to the first 4,000 tokens and summarize that portion, assuming the introduction contains the contract's most critical terms and obligations, while ignoring all subsequent clauses and appendices.",
+        "explanation": "Incorrect. Truncating the document to only the first 4,000 tokens risks omitting critical clauses, liabilities, and obligations that often appear later in financial contracts. A summary based solely on the introduction would be incomplete and potentially misleading, making this approach unsafe for legal documents.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use RAG (Retrieval-Augmented Generation) to embed the contract, retrieve only the single most relevant chunk by similarity, and summarize that chunk as the full contract summary, discarding all other sections of the document.",
+        "explanation": "Incorrect. While RAG is effective for question-answering by retrieving relevant snippets, summarizing only the single most relevant chunk fails to capture the full scope of a financial contract. A holistic summary requires processing the entire document, not just one isolated part.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Enable the 'Context Extension' feature in the Bedrock console for the specific model ID to automatically double the token limit and process the full contract in a single call, bypassing the need for any chunking or summarization pipeline.",
+        "explanation": "Incorrect. Amazon Bedrock does not have a generic 'Context Extension' feature that can double a model's token limit. The context window is a fixed characteristic of a specific model version, and handling documents that exceed it requires architectural patterns like chunking and summarization pipelines, not a console setting.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Implement a Map-Reduce approach using LangChain or AWS Step Functions, where the document is chunked, summaries are generated for each chunk, and a final summary is generated from the chunk summaries.",
+        "explanation": "Correct. The Map-Reduce approach breaks the document into chunks that fit within the model's context window, generates summaries for each chunk, and then combines them into a final comprehensive summary. This ensures full document coverage while respecting model limitations, and can be implemented using frameworks like LangChain or orchestration services like AWS Step Functions.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 26,
+    "total": 60,
+    "domain": "5.1 Implement evaluation systems for GenAI",
+    "stem": "Which of the following describes the correct configuration for an 'Accuracy' evaluation in Amazon Bedrock when using the built-in automated evaluation workflow for a Question-Answer task?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Input Prompt only.",
+        "explanation": "Incorrect. An 'Accuracy' evaluation requires a ground-truth reference to compare the model's output against. An input prompt alone is insufficient as there is no basis for the automated workflow to determine if the model's response is correct.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Input Prompt, Reference Response, and a negative constraint.",
+        "explanation": "Incorrect. While a reference response is required for an accuracy evaluation, a negative constraint is not a standard component of this specific evaluation type. Negative constraints are typically used for other evaluations, such as checking for safety, toxicity, or ensuring the model avoids specific undesirable outputs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Input Prompt and Reference Response (Ground Truth).",
+        "explanation": "Correct. To evaluate the accuracy of a model on a Question-Answer task, Amazon Bedrock's automated evaluation requires both the 'Input Prompt' (the question) and the 'Reference Response' (the ground truth or correct answer). The system generates a response from the model using the prompt and then compares it to the reference response to calculate accuracy metrics like exact match or F1 score.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Input Prompt and a Context Document.",
+        "explanation": "Incorrect. While a context document is often provided in Retrieval-Augmented Generation (RAG) scenarios to help the model generate a factually grounded answer, it does not serve as the benchmark for accuracy evaluation. The system still needs a specific 'Reference Response' to compare the model's output against.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 27,
+    "total": 60,
+    "domain": "3.4 Implement responsible AI principles",
+    "stem": "A media company is using Generative AI to create image captions. They need to ensure that the model outputs do not exhibit toxicity or hate speech. They want to quantify the level of toxicity in their production traffic over time to detect if the model's behavior is drifting. Which implementation meets this monitoring requirement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Integrate model evaluation metrics (toxicity scores) into the pipeline and publish the aggregated data to Amazon CloudWatch for visualization and alarming.",
+        "explanation": "Correct. Integrating model evaluation metrics such as toxicity scores into the pipeline produces quantifiable measurements for each output. Publishing these aggregated metrics to Amazon CloudWatch enables continuous monitoring, visualization, and automated alarming, which is ideal for detecting model drift over time.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Use Amazon Bedrock Guardrails to block toxic captions and log the blocked requests, then manually review the logs to quantify toxicity trends over time.",
+        "explanation": "Incorrect. Using Amazon Bedrock Guardrails to block toxic captions and logging blocked requests is a preventative measure, but manually reviewing logs does not provide automated, quantifiable metrics for monitoring toxicity trends over time. This approach lacks scalability and cannot systematically detect model drift.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon Rekognition to analyze the images for unsafe content and log the moderation labels, then aggregate the label counts to track toxicity drift.",
+        "explanation": "Incorrect. Amazon Rekognition analyzes images for unsafe content, but the requirement is to monitor toxicity in generated text captions, not the images themselves. Using Rekognition for text-based toxicity analysis is the wrong tool for this task.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Rely on user feedback buttons (Thumbs up/down) on captions and aggregate the feedback ratio over time to monitor toxicity levels in production traffic.",
+        "explanation": "Incorrect. Relying on user feedback buttons like thumbs up/down is not a reliable method for monitoring toxicity. Feedback data is often sparse, biased, and subjective, and a user may dislike a caption for reasons other than toxicity, making it a noisy and incomplete signal for detecting model drift.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 28,
+    "total": 60,
+    "domain": "1.5 Design retrieval mechanisms for FM augmentation",
+    "stem": "A developer is building a RAG application using Amazon Bedrock Knowledge Bases. The source data consists of PDF files stored in an S3 bucket. The developer wants to minimize the amount of custom code required to manage the ingestion pipeline, specifically regarding text extraction and chunking. Which approach should the developer take?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Create an AWS Lambda function triggered by S3 uploads to parse PDFs using Python libraries, chunk the text, and write to the vector store directly.",
+        "explanation": "This approach requires writing and maintaining significant custom code for parsing PDFs, chunking text, handling errors, and managing the ingestion pipeline. This directly contradicts the primary goal of minimizing custom code and increases operational overhead.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use the built-in managed data source synchronization in Bedrock Knowledge Bases, selecting the 'Default' or 'Fixed-size' chunking strategy during configuration.",
+        "explanation": "This is the most efficient and low-code solution. Amazon Bedrock Knowledge Bases are designed to simplify RAG pipelines by offering a built-in, managed data source synchronization feature. By configuring the S3 bucket as a data source and choosing a chunking strategy, the service automatically handles the entire ingestion process—including text extraction from PDFs, chunking, embedding generation, and indexing into the vector store—with no custom code required.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Implement an Amazon Kinesis Data Firehose stream to ingest documents and transform them using a Lambda blueprint before loading into OpenSearch.",
+        "explanation": "This architecture is overly complex and not suitable for this use case. Amazon Kinesis Data Firehose is a streaming data ingestion service. Applying it to a static collection of PDF files for a RAG pipeline is an incorrect architectural choice that adds unnecessary infrastructure and cost compared to the direct, batch-oriented ingestion feature provided by Bedrock Knowledge Bases.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Textract asynchronously to extract text, save it to a new S3 bucket, and point the Knowledge Base to the text-only bucket.",
+        "explanation": "While Amazon Textract is a valid service for text extraction, this method introduces unnecessary complexity. It requires additional orchestration to trigger Textract jobs, manage the output files in a separate S3 bucket, and then configure the Knowledge Base. This is more complex than using the native, all-in-one ingestion feature provided by Bedrock Knowledge Bases, which can handle PDFs directly.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 29,
+    "total": 60,
+    "domain": "1.5 Design retrieval mechanisms for FM augmentation",
+    "stem": "A Generative AI developer is designing a retrieval system for a medical research application. The system retrieves 20 document chunks based on vector similarity. However, the LLM frequently hallucinates or misses the answer because the most relevant information is often located in the middle of the retrieved list (indices 5-15), and the model prioritizes context at the beginning and end of the prompt. How should the developer improve the system's accuracy?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Decrease the chunk size of the source documents so that more distinct chunks can be fed into the model.",
+        "explanation": "This is incorrect. Decreasing the chunk size would create more, smaller document chunks. This could potentially fragment the context, making it harder for the LLM to synthesize an answer. More importantly, it does not solve the fundamental problem of ordering the retrieved chunks by relevance and could even increase the noise by retrieving more, less-relevant chunks.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement an Amazon Bedrock Rerank model to rescore the 20 retrieved chunks and order them by relevance before sending them to the LLM.",
+        "explanation": "This is the correct solution. A reranker is a specialized model designed to take an initial set of retrieved documents and re-score them for relevance to the specific query. By using a reranker like Amazon Bedrock Rerank, the developer can ensure that the most semantically relevant chunks from the initial 20 are moved to the top of the list. This places the most critical information at the beginning of the context, directly mitigating the LLM's attention bias and improving response accuracy.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Change the embedding model to a multilingual model to capture a broader semantic nuance in the medical terminology.",
+        "explanation": "This is incorrect. Changing the embedding model might affect the initial retrieval quality but does not address the post-retrieval ordering problem. The issue is not with understanding the semantics of the terminology (which the current embedding model is already doing) but with the ranking of retrieved results presented to the LLM. This solution is irrelevant to the stated problem of attention bias.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Increase the context window of the foundation model to ensure all 20 chunks fit without truncation.",
+        "explanation": "This is incorrect. The core issue is not that the context doesn't fit, but that the LLM has an attention bias and struggles with the 'lost in the middle' problem. Simply increasing the context window size allows more data to be included but does not change the ordering or solve the problem of the model overlooking relevant information buried in the middle of the prompt.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 30,
+    "total": 60,
+    "domain": "3.2 Implement data security and privacy controls",
+    "stem": "An organization requires that all calls to Amazon Bedrock from their AWS Lambda functions are authenticated and authorized, but also that the traffic is encrypted in transit using TLS 1.2 or higher. The Lambda functions are inside a VPC. Does the developer need to implement custom encryption logic?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "No, but the developer must switch to using HTTP instead of HTTPS to allow the VPC Endpoint to inspect the traffic.",
+        "explanation": "Incorrect. This is a highly insecure practice that would violate the core requirement of encrypting traffic in transit. Switching from HTTPS to HTTP would transmit data in plaintext. VPC Endpoints are fully compatible with HTTPS traffic and do not require unencrypted communication for inspection. The correct and secure method is to use HTTPS over the VPC Endpoint.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "No, AWS calls to Bedrock are encrypted in transit by default using TLS, and the VPC Endpoint ensures traffic stays on the AWS network.",
+        "explanation": "Correct. AWS service endpoints, including Amazon Bedrock, are accessed over HTTPS, which enforces TLS encryption (version 1.2 or higher) for all data in transit by default. Therefore, no custom encryption logic is needed. The use of a VPC Endpoint (via AWS PrivateLink) further enhances security by ensuring that traffic between the Lambda function and Bedrock does not traverse the public internet, but it still uses the same TLS encryption. Authentication and authorization are handled separately via IAM roles and policies.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Yes, the developer must install a certificate on the Lambda function to establish a VPN tunnel to Bedrock.",
+        "explanation": "Incorrect. Establishing a VPN tunnel or installing custom certificates on the Lambda function is unnecessary. The standard HTTPS/TLS protocol, managed automatically by the AWS SDK and the Lambda execution environment, handles the secure communication and trust relationship with the Bedrock service endpoint. This approach is overly complex and not required to meet the stated security requirements.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Yes, the developer must encrypt the payload using KMS before calling the Bedrock API.",
+        "explanation": "Incorrect. All AWS SDK calls to services like Amazon Bedrock are encrypted in transit by default using HTTPS, which employs TLS. This meets the requirement for in-transit encryption without needing custom, application-level encryption of the payload with AWS KMS. While KMS can be used for at-rest encryption or envelope encryption strategies, it is not necessary to meet the in-transit encryption requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 31,
+    "total": 60,
+    "domain": "1.6 Implement prompt engineering strategies and governance for FM interactions",
+    "stem": "A developer is interacting with a Foundation Model that struggles with complex arithmetic reasoning questions included in user prompts. The model frequently provides incorrect answers despite having the necessary knowledge. The developer wants to improve accuracy without fine-tuning the model or changing the model provider. Which prompt engineering strategy should be implemented?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Zero-shot prompting.",
+        "explanation": "Incorrect. Zero-shot prompting involves asking the model a question directly without providing any examples or a specific reasoning structure. Since the model is already failing at these tasks, this baseline approach is unlikely to improve its accuracy. It does not guide the model to break down the problem or show intermediate steps.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Chain-of-Thought (CoT) prompting.",
+        "explanation": "Correct. Chain-of-Thought (CoT) prompting is a technique specifically designed to improve a model's performance on complex reasoning tasks like arithmetic. By instructing the model to 'think step by step' or providing examples that show a sequence of reasoning, CoT encourages the model to break down the problem into smaller, intermediate steps. This decomposition significantly improves the accuracy of the final answer without requiring model fine-tuning.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Retrieval Augmented Generation (RAG).",
+        "explanation": "Incorrect. Retrieval Augmented Generation (RAG) is used to augment a model's knowledge by retrieving relevant information from an external data source and including it in the prompt. This is effective for questions requiring up-to-date or domain-specific factual information, but it does not inherently improve the model's internal arithmetic or logical reasoning capabilities.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Temperature adjustment to 0.0.",
+        "explanation": "Incorrect. Adjusting the temperature parameter to 0.0 makes the model's output more deterministic by always selecting the token with the highest probability. While this reduces randomness and increases consistency, it does not correct a flawed reasoning process. If the model's most likely reasoning path is incorrect, setting the temperature to 0.0 will just cause it to produce the same wrong answer consistently.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 32,
+    "total": 60,
+    "domain": "2.5 Implement application integration patterns and development tools",
+    "stem": "A team wants to integrate an LLM into their customer support workflow. When a support ticket is created in Salesforce, they want to automatically generate a suggested response. If the confidence of the response is low or involves a 'Critical' account, it should be routed to a Slack channel for human review before being posted back to Salesforce. Which architecture supports this asynchronous, multi-step integration?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Write a script on an EC2 instance that polls the Salesforce API every minute for new tickets and calls Bedrock to generate a response. If the account is critical or confidence is low, the script posts the response to a Slack channel for human review. After approval, the script updates the ticket in Salesforce via the API.",
+        "explanation": "Incorrect. Polling the Salesforce API from an EC2 instance is an anti-pattern that introduces latency and scalability issues when event-driven services like EventBridge are available. The script-based approach lacks durable state management and a proper integration for human review, relying on manual processes without automatic workflow resumption. This design is inefficient, error-prone, and does not meet the requirements for a resilient, asynchronous integration.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use Amazon AppFlow to sync Salesforce tickets to S3 and trigger a Lambda function that invokes Bedrock to generate a response. If the account is critical or confidence is low, use SES to send the response to a Slack channel for human review. After approval, a second Lambda updates the ticket in Salesforce via the API.",
+        "explanation": "Incorrect. Amazon AppFlow is designed for bulk data synchronization, not real-time event handling, making it unsuitable for triggering immediate response generation. Using SES to send the response to Slack is fragile and lacks durable state management for the human review step. This approach does not provide a coordinated wait-for-human-review mechanism, leading to an unreliable workflow.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon EventBridge to capture the Salesforce event. Target an AWS Step Functions state machine. The state machine invokes Bedrock. Use a 'Choice' state to check logic. If review is needed, use the waitForTaskToken pattern to send a message to Slack and pause execution until a human approves via a callback URL.",
+        "explanation": "Correct. Amazon EventBridge can natively capture events from Salesforce, and AWS Step Functions orchestrates the multi-step workflow with durable state management. The Choice state handles conditional logic (critical account or low confidence), and the waitForTaskToken pattern pauses execution until a human approves via a callback URL, directly integrating with Slack. This solution is resilient, scalable, and fully addresses the asynchronous, human-in-the-loop requirement.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Connect to intercept the ticket creation and invoke a Lambda that calls Bedrock for response generation. Use Contact Lens for Amazon Connect to analyze sentiment and route critical or low-confidence cases to a Slack channel for human review. After approval, the Lambda updates the ticket in Salesforce via the API.",
+        "explanation": "Incorrect. Amazon Connect and Contact Lens are designed for contact center interactions like voice and chat, not for processing Salesforce ticket events. The workflow is triggered by a ticket creation, not a customer call, making this solution inappropriate for the problem domain. It does not provide a native mechanism for Slack integration or durable workflow orchestration.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 33,
+    "total": 60,
+    "domain": "3.4 Implement responsible AI principles",
+    "stem": "An educational technology company uses an LLM to tutor students. They want to ensure that the model does not output content that reinforces gender or racial stereotypes. They plan to use automated evaluation during their CI/CD pipeline. Which metric should they prioritize tracking in Amazon SageMaker Clarify or their evaluation suite?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "ROUGE-N score",
+        "explanation": "Incorrect. ROUGE-N (Recall-Oriented Understudy for Gisting Evaluation) is a metric primarily used to evaluate the quality of text summarization or machine translation. It works by comparing the n-gram overlap between a model's output and a set of reference texts. It is not designed to detect bias, fairness issues, or stereotypes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "TOXICITY and BIAS metrics (e.g., disparate impact or stereotyping scores)",
+        "explanation": "Correct. TOXICITY and BIAS metrics are specifically designed to evaluate the safety and fairness of LLM outputs. Metrics like stereotyping scores, disparate impact, and toxicity scores directly measure the presence of harmful, offensive, or group-targeted content. Tools like Amazon SageMaker Clarify are built to compute these fairness and bias metrics, making them ideal for integration into a CI/CD pipeline to continuously monitor and prevent the reinforcement of stereotypes.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Inference latency",
+        "explanation": "Incorrect. Inference latency is an operational performance metric that measures the time it takes for a model to generate a response. While critical for user experience, it provides no information about the content, quality, or safety of the model's output. Therefore, it is not the appropriate metric for tracking and mitigating stereotypes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Perplexity",
+        "explanation": "Incorrect. Perplexity is a metric that measures how well a language model predicts a given text sample. It quantifies the model's uncertainty or 'surprise'. While useful for evaluating language fluency and coherence, it does not assess the content for bias, stereotypes, or toxicity. A model can have low perplexity (high fluency) while still generating harmful content.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 34,
+    "total": 60,
+    "domain": "4.2 Optimize application performance",
+    "stem": "A developer has deployed a Llama 2 model on Amazon SageMaker for an internal text-generation tool. The endpoint creates a high cost because the traffic is sporadic; there are huge spikes during business hours and zero traffic at night. The current ml.g5.2xlarge instance runs 24/7. The developer wants to optimize costs while ensuring the application scales during bursts. Which configuration is optimal?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Configure an Application Auto Scaling policy based on SageMakerVariantInvocationsPerInstance to scale the instance count.",
+        "explanation": "This option is not optimal. While Application Auto Scaling can handle traffic spikes by scaling the number of instances up and down, a standard SageMaker real-time endpoint cannot scale to zero instances. It requires a minimum of one instance to be provisioned and running at all times. This means the developer would still incur the cost of the ml.g5.2xlarge instance 24/7, failing to solve the cost issue during periods of zero traffic.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use SageMaker Serverless Inference to handle the sporadic traffic and scale to zero when idle.",
+        "explanation": "This is the optimal solution. Amazon SageMaker Serverless Inference is specifically designed for workloads with intermittent or unpredictable traffic patterns. It automatically starts compute resources and scales them up or down based on traffic, and most importantly, it can scale down to zero when the endpoint is not in use. This directly addresses the problem of paying for an idle instance during the night, thus providing significant cost savings while still being able to handle sudden traffic bursts during business hours.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Switch to Amazon Bedrock Provisioned Throughput to pay a fixed hourly rate.",
+        "explanation": "This is incorrect. Amazon Bedrock Provisioned Throughput is designed for applications with consistent, predictable, and high-throughput requirements. It involves paying a fixed rate to reserve a certain amount of inference capacity. This model would be financially inefficient for a sporadic workload with long idle periods, as you would pay for the capacity even when it's not being used.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Migrate the model to AWS Lambda using container images to utilize provisioned concurrency.",
+        "explanation": "This is incorrect and technically infeasible. Large models like Llama 2 require significant computational resources, particularly GPUs, for acceptable performance. AWS Lambda does not provide GPU support and has limitations on memory, execution time, and deployment package size, making it unsuitable for hosting large, GPU-dependent language models.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 35,
+    "total": 60,
+    "domain": "4.2 Optimize application performance",
+    "stem": "A media company needs to summarize 50,000 news articles every night for a morning newsletter. The process currently uses Amazon Bedrock’s InvokeModel API in a synchronous loop, but the job often hits API throttling limits and takes too long to complete. The summaries are not needed in real-time but must be ready by 6:00 AM. Which approach offers the MOST cost-effective and throughput-optimized solution?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Purchase Provisioned Throughput for the model to guarantee capacity during the nightly processing window.",
+        "explanation": "Incorrect. While Provisioned Throughput would solve the API throttling issue by guaranteeing capacity, it is designed for consistent, low-latency synchronous workloads. According to the research, Bedrock Batch Inference is the recommended and more cost-effective approach for asynchronous, non-real-time tasks, offering up to a 50% discount compared to On-Demand pricing.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use Amazon Bedrock Batch Inference to process the articles asynchronously from an Amazon S3 bucket.",
+        "explanation": "Correct. The research explicitly states that Amazon Bedrock Batch Inference is the recommended approach for throughput-optimized and cost-effective processing of large, non-real-time datasets. This asynchronous method is designed for bulk processing from Amazon S3 and offers a significant cost discount (up to 50%) compared to synchronous InvokeModel calls, directly addressing the company's throttling, performance, and cost requirements.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Deploy the model to a dedicated Amazon SageMaker endpoint with auto-scaling configured.",
+        "explanation": "Incorrect. While a SageMaker endpoint could perform this task, it involves migrating the workload to a different service. The most direct and optimized solution is to use the purpose-built feature within the service already in use. Amazon Bedrock Batch Inference is specifically designed for this use case and is more cost-effective and simpler to implement than setting up and managing a separate SageMaker infrastructure for a batch job.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Implement a step back-off and retry mechanism with exponential jitter in the application code.",
+        "explanation": "Incorrect. Implementing exponential backoff and retry is a best practice for handling API throttling, but it only mitigates the errors of the current inefficient architecture. It does not fundamentally solve the underlying problem of using a synchronous API for a large-scale batch job, nor does it optimize for throughput or cost.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 36,
+    "total": 60,
+    "domain": "1.2 Select and configure FMs",
+    "stem": "A developer is designing a generative AI feature for a content management system. The business requires the ability to switch between different Foundation Models (e.g., switching from Anthropic Claude 3 Sonnet to Haiku) and update system prompts in real-time based on user feedback, without redeploying the application code or restarting the underlying containers. Which architectural pattern achieves this most effectively?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use AWS AppConfig to store the model configuration and system prompts. Implement the AppConfig Agent or Lambda extension to retrieve the configuration at runtime.",
+        "explanation": "Correct. AWS AppConfig is a purpose-built service for managing and deploying application configurations dynamically and safely. It allows developers to change configurations like model IDs and system prompts at runtime without redeploying code or restarting services. Using the AppConfig Agent (for EC2/ECS) or the AppConfig Lambda extension allows the application to efficiently fetch the latest configuration in near real-time. AppConfig also provides crucial features like configuration validation and controlled deployment strategies (e.g., canary or linear rollouts) to minimize risk.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Store model configurations in Amazon DynamoDB. Use DynamoDB Streams to trigger a Lambda function that restarts the application service whenever a configuration change is detected.",
+        "explanation": "Incorrect. This approach directly violates the core requirement to update configurations *without* restarting the underlying containers. Using DynamoDB Streams to trigger a Lambda that restarts the application service is an anti-pattern for this specific problem, as it introduces downtime and operational complexity for what should be a seamless runtime change.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Hardcode the model versions in the application code but use environment variables for the system prompts. Update the environment variables in the ECS task definition to switch prompts.",
+        "explanation": "Incorrect. This pattern fails on two counts. First, hardcoding model versions in the application code prevents switching models without a code change and redeployment. Second, updating environment variables in an ECS task definition (or a similar container orchestration service) requires a new deployment, which restarts the containers to apply the new variables. This does not meet the requirement for real-time changes without restarts.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Store the model IDs and prompts in Amazon S3. Configure the application to poll the S3 bucket every minute for changes and update the local cache.",
+        "explanation": "Incorrect. While storing configuration in S3 is a possible approach, polling introduces latency (up to one minute in this case), is not event-driven, and is inefficient. This method also lacks the built-in safety features of a dedicated configuration management service, such as validation, staging, and controlled rollout strategies, and requires custom logic to manage updates.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 37,
+    "total": 60,
+    "domain": "1.3 Implement data validation and processing pipelines for FM consumption",
+    "stem": "Which of the following HTTP headers must be set when making a POST request to the Amazon Bedrock InvokeModel API to ensure the service accepts a standard JSON payload?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Content-Type: application/x-amz-json-1.1",
+        "explanation": "Incorrect. The Content-Type: application/x-amz-json-1.1 header is used for specific AWS services that adhere to the 'AWS JSON 1.1' protocol. The Amazon Bedrock runtime InvokeModel API uses a standard RESTful interface and expects the application/json content type for JSON payloads.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Accept: application/json and Content-Type: application/json",
+        "explanation": "Correct. The Content-Type: application/json header is mandatory to inform the InvokeModel API that the request body contains a JSON payload. The Accept: application/json header specifies that the client expects the model's response also to be in JSON format. Both are standard HTTP headers for a complete JSON-based API request/response cycle with Amazon Bedrock.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "x-amzn-bedrock-input-format: json",
+        "explanation": "Incorrect. This is not a standard or documented HTTP header for the Amazon Bedrock InvokeModel API. The correct and standard method for specifying the input payload format is the Content-Type header.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Authorization: AWS4-HMAC-SHA256 and Content-Encoding: gzip",
+        "explanation": "Incorrect. The Authorization header is required for authenticating the request using AWS Signature Version 4, but it does not specify the format of the payload. The Content-Encoding header is optional and indicates that the request body is compressed (e.g., with gzip), not that its underlying data format is JSON.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 38,
+    "total": 60,
+    "domain": "1.2 Select and configure FMs",
+    "stem": "An enterprise is building an internal document search tool using Amazon Bedrock. The tool must support three distinct use cases: complex legal reasoning, rapid casual chat, and long-context document summarization. The architecture must dynamically select the most cost-effective model for each request type without code changes. The model selection logic is complex and subject to frequent rule updates by the business team. Which architecture is the MOST maintainable and flexible?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use AWS Step Functions with a Choice state to route requests. Store the routing rules in the Step Functions definition and update the state machine when rules change.",
+        "explanation": "Incorrect. This approach tightly couples the business routing logic with the infrastructure definition of the Step Functions state machine. Consequently, any change to the routing rules, no matter how small, would require modifying and redeploying the entire state machine. This process is cumbersome and does not meet the requirement for easy, frequent updates by a business team without code changes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Create separate API Gateway endpoints for each use case, each triggering a hardcoded Lambda function for a specific model (e.g., /legal points to Claude 3 Opus, /chat points to Titan).",
+        "explanation": "Incorrect. This solution is the most rigid and least maintainable. Hardcoding model selections into separate Lambda functions and API Gateway endpoints creates a brittle architecture. If the business decides to use a different model for a use case, it would necessitate code modifications and a full redeployment of the affected Lambda function. This approach directly contradicts the requirements for dynamic selection and updates without code changes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Implement an API Gateway backed by a single Lambda function. Use AWS Systems Manager Parameter Store to hold a JSON map of use-cases to Model IDs. The Lambda fetches this map to determine which Bedrock model to invoke.",
+        "explanation": "Correct. This architecture provides the best balance of flexibility, maintainability, and operational simplicity. By storing the routing logic as a JSON map in AWS Systems Manager (SSM) Parameter Store, it decouples the business rules from the application code. The business team can easily update the parameter value through the AWS Console or CLI without any code changes or deployments. The single Lambda function fetches this configuration at runtime to dynamically route requests to the appropriate Bedrock model. This serverless pattern is cost-effective and perfectly aligns with the requirement for a flexible system that supports frequent rule updates.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Deploy a custom model router on Amazon EKS that intercepts all requests, analyzes the semantic intent using a local BERT model, and routes to the appropriate Bedrock endpoint.",
+        "explanation": "Incorrect. While this approach offers flexibility, it introduces significant operational complexity, cost, and maintenance overhead. Managing an Amazon EKS cluster, along with the lifecycle of a custom BERT model for routing, is far more complex than the serverless alternative. This heavyweight solution is not the most maintainable or cost-effective choice for implementing business rule-based routing, especially when a simpler, fully-managed service like SSM Parameter Store can achieve the desired outcome.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 39,
+    "total": 60,
+    "domain": "4.3 Implement monitoring systems for GenAI applications",
+    "stem": "A developer is managing a high-throughput application using Anthropic Claude on Amazon Bedrock. The application is occasionally hitting the 'LimitExceededException'. The developer needs to set up an alert to notify the team immediately when the application approaches the account's quota limits. Which implementation is correct?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Poll the Service Quotas API every minute using a Lambda function.",
+        "explanation": "This is incorrect. The Service Quotas API allows you to view your quota limits, but it does not provide real-time usage metrics. Polling this API would only tell you what the limit is, not how close you are to hitting it. Furthermore, this method is inefficient, adds unnecessary latency and cost, and fails to monitor the actual throttling events as they happen.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Configure AWS Trusted Advisor to send an email when limits are reached.",
+        "explanation": "This is incorrect. AWS Trusted Advisor is a service that provides recommendations for best practices, cost optimization, and security. Its service limit checks are not performed in real-time and are not suitable for monitoring high-frequency, dynamic API throttling events. It is not designed to be an immediate alerting tool for operational issues like API rate limiting.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Monitor the 5XX error rate on the Application Load Balancer in front of the application.",
+        "explanation": "This is incorrect. A LimitExceededException from a service like Bedrock corresponds to a client-side error, typically with an HTTP status code of 429 Too Many Requests. In contrast, 5XX errors on an Application Load Balancer (ALB) indicate server-side failures (e.g., 502 Bad Gateway, 504 Gateway Timeout). Monitoring ALB 5XX errors would not capture Bedrock API throttling events and is therefore the wrong metric for this use case.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Create an Amazon CloudWatch Alarm on the Bedrock metric InvocationThrottled with a statistic of Sum >= 1.",
+        "explanation": "This is the correct approach. Amazon Bedrock publishes operational metrics to Amazon CloudWatch, including InvocationThrottled. This metric is emitted each time an API call is throttled due to exceeding rate limits, which is what causes the LimitExceededException. By creating a CloudWatch Alarm on this metric with a statistic of Sum and a threshold of >= 1, an alert will be triggered immediately upon the first occurrence of a throttling event within the configured evaluation period, providing the required real-time notification.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 40,
+    "total": 60,
+    "domain": "1.1 Analyze requirements and design GenAI solutions",
+    "stem": "A startup is launching a generative AI application during a high-profile televised event. They expect a massive spike in traffic for a 4-hour window. The application uses a specific version of the Anthropic Claude model on Amazon Bedrock. The business requirement is to guarantee capacity and ensure consistent performance during the event without risking service unavailability due to noisy neighbor issues. Which deployment strategy should the developer choose?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use Amazon SageMaker JumpStart to deploy the model on Spot Instances.",
+        "explanation": "Incorrect. This option is unsuitable for two main reasons. First, Spot Instances are spare compute capacity that can be interrupted by AWS with short notice, making them completely inappropriate for a critical workload that requires guaranteed availability. Second, this proposes moving the workload from the managed Amazon Bedrock service to a self-managed Amazon SageMaker deployment, which is a different architectural approach and not what was specified.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement exponential backoff and retry logic in the application code using the On-Demand mode.",
+        "explanation": "Incorrect. While implementing exponential backoff and retry logic is a crucial best practice for handling transient errors and throttling, it is a reactive measure. It does not address the fundamental issue of insufficient capacity during a sustained high-traffic event. Relying on this alone would lead to increased user-perceived latency and would not guarantee service availability or consistent performance.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Purchase Provisioned Throughput for the specific model version with a commitment term suitable for the event duration.",
+        "explanation": "Correct. Amazon Bedrock Provisioned Throughput is specifically designed for workloads that require guaranteed capacity and consistent performance. By purchasing Provisioned Throughput, you reserve dedicated inference capacity (Model Units) for a specific model version. This eliminates resource contention, prevents noisy neighbor issues, and ensures predictable, low latency, making it the ideal solution for a critical, high-traffic event.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Bedrock On-Demand throughput and rely on standard AWS quotas.",
+        "explanation": "Incorrect. The On-Demand mode for Amazon Bedrock operates on a shared pool of resources, making it subject to availability constraints and the 'noisy neighbor' effect. During a massive traffic spike, this can lead to throttling, inconsistent latency, and potential unavailability, failing to meet the core business requirements for guaranteed capacity and consistent performance.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 41,
+    "total": 60,
+    "domain": "4.3 Implement monitoring systems for GenAI applications",
+    "stem": "A GenAI application processes medical records. The architecture requires that if the primary logging destination fails, the application must stop processing requests immediately to prevent un-audited access. Which logging configuration meets this strict requirement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Asynchronous delivery to S3.",
+        "explanation": "Incorrect. Asynchronous delivery is explicitly designed to decouple the application's primary function from the logging process. This means the application would continue to process requests even if the S3 logging destination were unavailable, which directly violates the core architectural requirement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Bedrock Model Invocation Logging to S3.",
+        "explanation": "Incorrect. Bedrock Model Invocation Logging is a managed, service-level feature that operates asynchronously. The application has no direct control over this process and cannot use a failure in this logging mechanism to trigger an immediate halt in its own execution.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Synchronous delivery to CloudWatch Logs with a retry policy.",
+        "explanation": "Incorrect. While synchronous delivery would block the application's execution until the log is written, the inclusion of a retry policy defeats the requirement for an immediate stop. The application would hang and attempt to resend the log multiple times, delaying the detection of a persistent failure rather than halting immediately.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Application-level logging that throws a fatal exception if the write to the logging stream fails.",
+        "explanation": "Correct. This is the only approach that directly enforces the requirement. By implementing application-level logic to treat a logging failure as a fatal error, the application's execution is explicitly tied to the success of its auditing. Throwing a fatal exception upon a failed log write will immediately terminate the request processing flow, preventing any un-audited operations.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 42,
+    "total": 60,
+    "domain": "1.1 Analyze requirements and design GenAI solutions",
+    "stem": "A pharmaceutical company needs a model to generate clinical trial reports. Standard models in Amazon Bedrock lack the specific medical nomenclature and formatting style required by the company. The company has a dataset of 10,000 previous high-quality reports. The solution must ensure data privacy and that the adapted model is usable only by the company. What is the recommended approach?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use prompt engineering with few-shot prompting to teach the model the style.",
+        "explanation": "Incorrect. Few-shot prompting, which involves providing a few examples within the prompt, is insufficient for consistently generating complex, long-form documents like clinical trial reports. It is limited by the model's context window and is an unreliable method for enforcing a specific style across an entire document. This approach does not create a private, adapted model and fails to leverage the company's large dataset effectively.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use RAG to inject the style guide into every prompt context.",
+        "explanation": "Incorrect. Retrieval-Augmented Generation (RAG) is designed to provide external, factual knowledge to a model at inference time, not to teach it a specific style or formatting. While a style guide could be retrieved, it would be an inefficient and brittle approach, increasing prompt complexity and latency without guaranteeing consistent application. Most importantly, RAG does not create a private, adapted model; it merely augments prompts sent to a standard model.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Perform a Model Fine-tuning job on Amazon Bedrock using the dataset, creating a custom model.",
+        "explanation": "Correct. Fine-tuning on Amazon Bedrock is the ideal solution. It uses the supervised learning dataset of 10,000 high-quality reports to adapt a base model to the specific task, including the required medical nomenclature and formatting style. This process creates a new, custom model that is private to the company's AWS account. Access to this custom model can be strictly controlled using IAM policies, directly satisfying the requirements for data privacy and exclusive use.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Perform a Continued Pre-training job on Amazon Bedrock using the raw text of the reports.",
+        "explanation": "Incorrect. Continued Pre-training is used to adapt a model to a new domain's general knowledge and vocabulary using a very large, unstructured corpus. It is computationally expensive and less effective than fine-tuning for teaching a specific task, style, or format. Given the goal is to learn a specific report generation style from 10,000 examples, fine-tuning is the more direct and efficient method.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 43,
+    "total": 60,
+    "domain": "5.2 Troubleshoot GenAI applications",
+    "stem": "Users of a GenAI text summarizer are bypassing safety filters by using 'jailbreak' techniques in their input prompts (e.g., 'Ignore previous instructions'). The current prompt validation logic uses basic regex which is insufficient. What is the most secure and managed way to prevent this on Amazon Bedrock?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Rely on the inherent safety training of the foundation model without external controls.",
+        "explanation": "This option is incorrect because relying solely on the foundation model's inherent safety training is unsafe and insufficient. Foundation models can still be vulnerable to novel jailbreak prompts and adversarial inputs. A defense-in-depth strategy requires external controls, like Guardrails, to enforce consistent, auditable, and customizable safety policies.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Train a custom classifier model to detect jailbreak attempts and run it before every API call.",
+        "explanation": "This approach is incorrect because while technically feasible, it is not the most secure or managed solution. Training and maintaining a custom classifier requires significant effort, including data collection, continuous retraining to keep up with new jailbreak techniques, and operational overhead. This places the burden of security entirely on the development team rather than leveraging a dedicated, managed AWS service.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Write a complex Lambda function to analyze the semantic intent of every input.",
+        "explanation": "This is an incorrect approach. Building a custom Lambda function to perform complex semantic analysis is brittle, difficult to tune, and introduces significant latency and maintenance burden. Such a solution is less secure and far less managed than using Bedrock's native Guardrail mechanisms, which are purpose-built for this task.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Configure Guardrails for Amazon Bedrock with a 'Jailbreak' filter enabled and apply it to the InvokeModel requests.",
+        "explanation": "This is the correct answer. Guardrails for Amazon Bedrock is a fully managed feature specifically designed to implement safeguards for GenAI applications. It provides a built-in, scalable, and robust solution to filter and block harmful content, including a specific filter for jailbreak attempts. This is the most secure and managed way as it reduces operational complexity and benefits from AWS's continuous updates to counter emerging threats.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 44,
+    "total": 60,
+    "domain": "5.2 Troubleshoot GenAI applications",
+    "stem": "An e-commerce chatbot built on Amazon Bedrock Claude 3 Sonnet is experiencing high latency. Traces are needed to identify whether the bottleneck is the vector database lookup, the Lambda preprocessing, or the FM generation itself. Which observability configuration provides the granular visibility required to pinpoint the latency source?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Enable AWS X-Ray active tracing on the Lambda function and integrate AWS SDK instrumentation to trace downstream calls to Bedrock and the vector database.",
+        "explanation": "Correct. AWS X-Ray is designed for distributed tracing and performance analysis. Enabling active tracing on the Lambda function creates a trace segment for its execution. By using an X-Ray-instrumented AWS SDK, calls to downstream services like Amazon Bedrock are automatically captured as subsegments. This provides a detailed, visual breakdown of the time spent in each part of the process—Lambda preprocessing, the vector database query, and the Bedrock FM generation—allowing for precise identification of the latency source.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Configure VPC Flow Logs to monitor the network traffic latency between the Lambda subnets and the Bedrock service endpoints.",
+        "explanation": "Incorrect. VPC Flow Logs operate at the network layer, capturing metadata about IP traffic to and from network interfaces. They provide no insight into application-level performance, processing times within a service, or the duration of API calls. This tool is for network diagnostics, not application performance monitoring.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon CloudWatch Metrics to monitor the InvocationDuration metric for the Lambda function.",
+        "explanation": "Incorrect. The InvocationDuration metric in Amazon CloudWatch shows the total execution time for the Lambda function from start to finish. While this metric can confirm that there is a latency problem, it is an aggregate value and cannot break down the total duration into its constituent parts. It does not offer the granular visibility needed to distinguish between time spent on preprocessing, database lookups, or FM inference.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Enable Amazon CloudWatch Logs for the Lambda function and parse the timestamps manually.",
+        "explanation": "Incorrect. While CloudWatch Logs capture function output and timestamps, manually parsing them to troubleshoot a distributed application is inefficient, error-prone, and does not provide a correlated, end-to-end view of a request's lifecycle. This method lacks the sub-second, per-call granularity needed to isolate latency bottlenecks between different services like a vector database and an FM.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 45,
+    "total": 60,
+    "domain": "1.6 Implement prompt engineering strategies and governance for FM interactions",
+    "stem": "A global news agency wants to use an LLM to generate headlines. They have a strict policy that no political bias should appear in the generated content. They have defined a list of 'forbidden' political terms. The developer wants to ensure that even if the prompt explicitly asks for a political headline, the model refuses. Which implementation imposes this control reliably?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use Amazon Comprehend to analyze the sentiment of the output after it is generated.",
+        "explanation": "This approach is incorrect because it is a reactive, post-processing step. Analyzing the output with Amazon Comprehend after generation does not prevent the politically biased content from being created in the first place. Furthermore, Comprehend is primarily for tasks like sentiment analysis, which is different from identifying specific forbidden terms or political topics.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use a few-shot prompt with examples of non-political headlines.",
+        "explanation": "This is incorrect. While few-shot prompting can guide the model's output style, it is not a robust safety control. A user could easily craft a prompt that bypasses the examples and explicitly requests political content. Prompt engineering alone is too brittle to reliably enforce a strict content policy.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Configure an Amazon Bedrock Guardrail with a 'Topic Denied' filter and a 'Word Filter' for the specific list of political terms.",
+        "explanation": "This is the correct and most reliable solution. Amazon Bedrock Guardrails are specifically designed for implementing safety and governance policies. By configuring a 'Topic Denied' filter for political subjects and a 'Word Filter' for the specific list of forbidden terms, the agency can enforce its policy at the generation stage, reliably preventing both prompts and model responses that violate the rules.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Lower the Top-P and Temperature parameters to 0.",
+        "explanation": "This is incorrect. Lowering the Temperature and Top-P parameters to 0 makes the model's output more deterministic and less random, but it does not act as a content filter. If the most probable response to a prompt is a political headline, these settings will simply ensure that headline is consistently generated. These are sampling parameters, not safety mechanisms.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 46,
+    "total": 60,
+    "domain": "3.2 Implement data security and privacy controls",
+    "stem": "Which specific Amazon Bedrock feature allows a developer to define a set of 'denied topics' that the model should refuse to discuss, regardless of the prompt engineering techniques used by the user?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Bedrock Knowledge Bases",
+        "explanation": "Incorrect. Amazon Bedrock Knowledge Bases are used to connect foundation models to private data sources for Retrieval Augmented Generation (RAG). They control the information used to generate answers but do not provide a mechanism for defining and enforcing denied topics or content safety policies.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Bedrock Agents",
+        "explanation": "Incorrect. Amazon Bedrock Agents are designed to orchestrate and automate multi-step tasks by making API calls and querying data sources. While an agent's logic could be programmed to avoid certain topics, this is not the native, built-in feature designed for enforcing content policies at the model layer. Agents focus on task execution, not centralized safety enforcement.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Provisioned Throughput",
+        "explanation": "Incorrect. Provisioned Throughput is a capacity and performance management feature in Amazon Bedrock. It allows you to purchase a guaranteed level of model throughput for a specific period, ensuring predictable performance and managing costs. It is entirely unrelated to content safety, policy enforcement, or defining topics for the model.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Bedrock Guardrails",
+        "explanation": "Correct. Amazon Bedrock Guardrails is the specific feature designed to implement safeguards for generative AI applications. It provides runtime policy enforcement, allowing developers to configure denied topics, content filters for harmful content, and rules for personally identifiable information (PII) redaction. By defining denied topics in a Guardrail, a developer can ensure the model consistently refuses to engage on those subjects.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 47,
+    "total": 60,
+    "domain": "3.4 Implement responsible AI principles",
+    "stem": "A developer is building a Generative AI application for a recruitment firm to screen resumes. To adhere to Responsible AI principles, the firm must ensure the model does not exhibit bias toward specific demographics. The developer needs a scalable way to evaluate the model's fairness across thousands of generated screening summaries without incurring the high cost and latency of manual human review. What is the MOST efficient solution?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Rely solely on the model's training data documentation (Model Cards) to certify that the model is bias-free.",
+        "explanation": "This is incorrect. Model Cards are essential for transparency and documentation, providing details about a model's training data, architecture, and intended use. However, they are static documents and do not constitute an active, ongoing evaluation of the model's real-world outputs. Relying solely on a Model Card is insufficient to guarantee or certify fairness in a deployed application.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement an 'LLM-as-a-judge' approach using a stronger, aligned model to evaluate the outputs of the screening model against specific fairness criteria.",
+        "explanation": "This is the correct answer. The 'LLM-as-a-judge' approach is a modern, scalable, and efficient method for automated model evaluation. It involves using a more powerful and well-aligned large language model to assess the output of the application's model against a predefined set of fairness criteria (a rubric). This allows for rapid, consistent, and cost-effective evaluation at scale, directly addressing the requirements of the problem. It's important to carefully validate the judge model itself to ensure its evaluations are reliable.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Use Amazon Mechanical Turk to manually review a statistically significant sample of the resumes.",
+        "explanation": "This is incorrect. The question explicitly requires a solution that avoids the high cost and latency associated with manual human review. While Amazon Mechanical Turk can provide human feedback, it is not a scalable or efficient solution for evaluating thousands of outputs in real-time. It is better suited for creating evaluation datasets or for periodic audits, not as the primary evaluation mechanism.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Bedrock Guardrails to redact all names and addresses from the resumes before processing.",
+        "explanation": "This is incorrect. Using Amazon Bedrock Guardrails to redact Personally Identifiable Information (PII) like names and addresses is a valuable practice for privacy and can mitigate some direct sources of bias. However, it is an input filtering mechanism, not an output evaluation method. It does not solve the core problem of evaluating the fairness of the generated summaries, as bias can still be inferred from proxy variables (e.g., university, previous employers, location-based zip codes) that remain in the resume.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 48,
+    "total": 60,
+    "domain": "2.2 Implement model deployment strategies",
+    "stem": "A healthcare startup needs to run a specialized BioBERT-based model for entity extraction. The model is relatively small (300MB). They anticipate a high volume of requests (1000 TPS) but have a strict budget constraint. They want to utilize AWS Inferentia2 chips for the best price-performance ratio. How should they deploy this?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Deploy to Amazon Bedrock Custom Models.",
+        "explanation": "Incorrect. Amazon Bedrock is a managed service focused on providing access to pre-built foundation models. While it offers features like Custom Models, it does not provide the fine-grained control needed to compile a specific model with the Neuron SDK and guarantee deployment on Inferentia2 hardware for cost optimization.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Deploy to an Amazon ECS cluster running on GPU instances.",
+        "explanation": "Incorrect. This approach violates the core requirement of using AWS Inferentia2 chips, as it specifies GPU instances instead. AWS Inferentia2 is purpose-built for inference and offers a better price-performance ratio for this task compared to general-purpose GPUs. Additionally, using SageMaker reduces the operational overhead compared to managing an ECS cluster manually.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Compile the model using AWS Neuron SDK and deploy to a SageMaker Real-time endpoint using ml.inf2 instances.",
+        "explanation": "Correct. This is the ideal approach. To run a model on AWS Inferentia hardware, it must first be compiled using the AWS Neuron SDK. Deploying this compiled model to an Amazon SageMaker Real-time endpoint using ml.inf2 instances directly addresses all requirements: it utilizes the specified Inferentia2 chips for the best price-performance, and SageMaker Real-time endpoints are designed for high-throughput, low-latency, and sustained workloads like 1000 TPS.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Deploy to SageMaker Serverless Inference.",
+        "explanation": "Incorrect. SageMaker Serverless Inference is designed for workloads with intermittent or unpredictable traffic, not for sustained high-volume requests like 1000 TPS. Furthermore, it does not currently support specialized hardware like AWS Inferentia2 instances, making it unsuitable for this use case.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 49,
+    "total": 60,
+    "domain": "2.4 Implement FM API integrations",
+    "stem": "A financial services firm creates a report generation feature that uses a Foundation Model to analyze large PDF documents. The generation process takes between 45 and 90 seconds to complete. The current architecture uses Amazon API Gateway (REST API) triggering a Lambda function. Users are reporting HTTP 504 Gateway Timeout errors. What architectural change resolves this issue while maintaining a serverless approach?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Refactor the API to an asynchronous pattern. The API Gateway pushes the request to Amazon SQS and returns a job ID immediately. A Lambda function processes the queue, invokes Bedrock, and stores the result in DynamoDB for client polling.",
+        "explanation": "Correct. This asynchronous pattern decouples the request from processing: API Gateway pushes the job to Amazon SQS and immediately returns a job ID, avoiding the 29-second timeout. A Lambda function processes the queue, invokes Bedrock, and stores results in DynamoDB for client polling, enabling serverless handling of 45–90 second tasks.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Switch the API Gateway to a Regional endpoint instead of an Edge-optimized endpoint to reduce network latency overhead. Configure the Lambda function to run within a VPC to minimize cross-region data transfer delays. This setup keeps traffic within a single AWS region.",
+        "explanation": "Incorrect. Switching to a Regional endpoint or placing Lambda in a VPC does not affect the API Gateway integration timeout, which remains at 29 seconds. The 504 errors are caused by the backend processing time exceeding this limit, not by network latency.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Increase the API Gateway Integration Request timeout to 120 seconds and the Lambda function timeout to 2 minutes. Configure the Lambda to use provisioned concurrency to handle the extended execution window. Set the API Gateway endpoint to use a Regional endpoint to reduce latency.",
+        "explanation": "Incorrect. Amazon API Gateway REST APIs have a hard integration timeout of 29 seconds that cannot be increased to 120 seconds. Even if the Lambda timeout is raised and provisioned concurrency is used, the API Gateway will still return a 504 error before the 45–90 second processing completes.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Migrate the backend logic to AWS Fargate to bypass Lambda execution time limits. Deploy the report generation container on Fargate with a task that runs the Foundation Model analysis. Configure the service to scale tasks based on request volume.",
+        "explanation": "Incorrect. Migrating to AWS Fargate does not resolve the 29-second API Gateway integration timeout, which is the root cause of the 504 errors. While Fargate is serverless, an asynchronous pattern using SQS and Lambda is a more direct and fully serverless solution for long-running tasks.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 50,
+    "total": 60,
+    "domain": "3.3 Implement AI governance and compliance mechanisms",
+    "stem": "A developer needs to ensure full traceability of the data used to fine-tune a specialized medical LLM on SageMaker. The compliance team requires a lineage graph that shows the raw data source in S3, the Glue ETL jobs that processed it, the resulting training dataset, and the final model artifact. Which implementation achieves this automated lineage tracking?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use AWS CloudTrail to query all API calls related to S3 and SageMaker. Export these logs to Amazon Neptune to build a custom graph database of the relationships.",
+        "explanation": "Incorrect. While AWS CloudTrail captures API calls, it does not inherently produce an entity-to-entity lineage graph. Building a custom solution by exporting these logs to Amazon Neptune would require significant, complex engineering effort to interpret the logs and build the relationships manually. This approach is not automated, is likely to be brittle, and may miss crucial data-level relationships.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use Amazon SageMaker ML Lineage Tracking. Create tracking entities for the S3 data, the Glue job (via SageMaker Processing), and the training job to automatically associate artifacts and trial components.",
+        "explanation": "Correct. Amazon SageMaker ML Lineage Tracking is the purpose-built AWS service for this exact requirement. It automatically tracks and visualizes the relationships between ML workflow components. By creating tracking entities like artifacts (e.g., S3 datasets, models), actions (e.g., processing jobs, training jobs), and contexts, it generates a complete and auditable lineage graph, fulfilling the compliance team's needs for automated traceability from raw data to the final model.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Tag all S3 objects with a TrainingID. Propagate these tags manually through the Glue job to the output data, and add the tag to the SageMaker model object.",
+        "explanation": "Incorrect. Relying on manual tagging is highly error-prone and does not produce a structured, visual lineage graph. This method fails to capture the full context of the relationships, such as the specific jobs, parameters, and intermediary artifacts involved. It is not a robust or automated solution for compliance-grade lineage tracking.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Store the hash of the training data in the model's model.tar.gz file. Write a script to scan all S3 buckets for a matching hash during an audit.",
+        "explanation": "Incorrect. Storing a data hash is a method for data integrity verification, not lineage tracking. It can confirm which dataset was used but provides no information about how that data was produced (e.g., the Glue ETL job) or its relationship to the raw data source. This is an ad-hoc, inefficient audit technique that does not create the required automated lineage graph.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 51,
+    "total": 60,
+    "domain": "2.4 Implement FM API integrations",
+    "stem": "A mobile application uses Amazon Bedrock to generate images. Users are experiencing intermittent failures when the mobile network is unstable. The developer wants to implement a mechanism in the backend that ensures the image generation request is eventually processed even if the mobile client disconnects, and notifies the user via push notification when done. Which integration pattern fits best?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Mobile App -> API Gateway (Synchronous) -> Lambda -> Bedrock.",
+        "explanation": "This option describes a synchronous request-response pattern. It requires the mobile client to maintain a stable, persistent connection until the image generation is complete. Intermittent network connectivity would cause the request to fail, and there is no mechanism for guaranteed eventual processing or for notifying a disconnected client.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Mobile App -> Direct Bedrock API call using AWS IAM credentials stored in the app.",
+        "explanation": "This option is incorrect for two major reasons. First, storing long-term AWS IAM credentials within a mobile application is a severe security anti-pattern, as they can be extracted and misused. Second, making a direct API call from the client is a synchronous operation that would still fail due to network instability, failing to solve the core problem.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Mobile App -> AWS AppSync -> Lambda -> Bedrock -> Return Image.",
+        "explanation": "While AWS AppSync can be used to trigger backend Lambda functions, the described flow ending with \"Return Image\" implies a synchronous interaction that expects the client to remain connected to receive the result. This does not solve the problem of network instability. For this specific use case of a guaranteed, long-running background job, a queue-based pattern (SQS) is more robust and suitable than a real-time API framework like AppSync.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Mobile App -> API Gateway -> Amazon SQS -> Lambda -> Bedrock -> Amazon SNS (Mobile Push).",
+        "explanation": "This option correctly implements an asynchronous, decoupled architecture. The mobile app makes a quick call to API Gateway, which places a message in an Amazon SQS queue. This decouples the client from the long-running process, ensuring the request is durably stored and will be eventually processed even if the client disconnects. A Lambda function processes messages from the queue, calls Bedrock, and upon completion, publishes a message to Amazon SNS to send a push notification to the user's device. This pattern perfectly addresses both the reliability and notification requirements.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 52,
+    "total": 60,
+    "domain": "2.2 Implement model deployment strategies",
+    "stem": "A media company uses a Generative AI model to generate subtitles. The workload involves processing video transcripts that are dropped into an S3 bucket. The volume varies wildly; sometimes there are 10,000 videos in an hour, other times zero for days. The processing need not be real-time but must complete within 24 hours. Which architecture is MOST operationally efficient and cost-effective?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "SageMaker Batch Transform jobs triggered by S3 event notifications.",
+        "explanation": "Correct. SageMaker Batch Transform is specifically designed for asynchronous, large-scale inference on datasets, making it ideal for this scenario. It is highly cost-effective because compute resources are provisioned only for the duration of the job and are then terminated. An event-driven architecture using S3 event notifications (e.g., to trigger a Lambda function that starts the Batch Transform job) is operationally efficient and scales seamlessly to handle the unpredictable workload.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "SageMaker Real-time endpoint with aggressive Auto Scaling.",
+        "explanation": "Incorrect. SageMaker Real-time endpoints are designed for low-latency, synchronous inference. This approach is not cost-effective for a highly variable, asynchronous workload because it requires continuously provisioned instances. Even with auto-scaling, you incur costs during idle periods, and scaling up quickly enough for massive, sudden bursts is challenging and expensive.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Amazon Bedrock Provisioned Throughput.",
+        "explanation": "Incorrect. Amazon Bedrock Provisioned Throughput is designed for applications with predictable, sustained throughput that require guaranteed low latency. Its pricing model charges for committed capacity regardless of usage, making it a very poor choice for a highly sporadic and variable workload. It is neither operationally efficient nor cost-effective for this use case.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "A persistent EC2 instance with a GPU running a polling script.",
+        "explanation": "Incorrect. A persistent EC2 instance incurs costs 24/7, making it extremely inefficient for a workload that can be zero for days. It also introduces significant operational overhead for managing the instance, the polling script, and custom scaling logic. A single instance would be a bottleneck during large bursts, and polling is less efficient than an event-driven approach.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 53,
+    "total": 60,
+    "domain": "2.3 Design and implement enterprise integration architectures",
+    "stem": "A retail company wants to implement a 'Chat with your Data' feature using RAG (Retrieval Augmented Generation). The architecture involves an API Gateway, a Lambda function, and Amazon Bedrock. Users report that the chatbot feels slow because they have to wait 5-10 seconds for the full answer to appear. The developer wants to improve the user experience by displaying text as it is generated. Which architecture supports this requirement?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Use API Gateway to invoke the Lambda function asynchronously and have the client poll an S3 bucket for the generated text files.",
+        "explanation": "Incorrect. This asynchronous polling pattern is the opposite of a real-time streaming experience. Invoking Lambda asynchronously and having the client poll an S3 bucket introduces substantial latency from writing to and reading from S3, resulting in a batch-like delivery rather than a smooth, incremental display of text.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Use AWS AppSync with GraphQL subscriptions to push incremental chunks of the response from the Lambda function to the client.",
+        "explanation": "Incorrect. While AWS AppSync with GraphQL subscriptions can push data to clients, it is designed for a publish/subscribe model, which is overly complex and not optimized for streaming a single response from a generative AI model. This approach adds unnecessary architectural complexity compared to native streaming solutions.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Switch the API Gateway to a REST API and use HTTP keep-alive to poll the Lambda function for partial results.",
+        "explanation": "Incorrect. This describes a polling architecture, not a streaming one. Polling introduces significant latency and complexity, and is inefficient for real-time text generation. HTTP keep-alive is a mechanism for reusing TCP connections and does not facilitate the streaming of a response body.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Implement Lambda Response Streaming with an Amazon API Gateway HTTP API or use a WebSocket API to stream the chunks from Bedrock to the client.",
+        "explanation": "Correct. This option presents the two most direct and effective solutions for streaming responses on AWS. Lambda Response Streaming is a feature specifically designed to send back partial responses from a function as they become available, which is a perfect fit for generative AI outputs and integrates with Amazon API Gateway HTTP APIs. Alternatively, a WebSocket API provides a persistent, bidirectional connection, allowing the Lambda function to push text chunks from Bedrock to the client in real-time. Both methods solve the problem of perceived latency by enabling the user interface to display the response as it is being generated.",
+        "isCorrect": true,
+        "isIncorrect": false
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 54,
+    "total": 60,
+    "domain": "4.1 Implement cost optimization and resource efficiency strategies",
+    "stem": "A startup is launching a generative AI application that categorizes user emails. 90% of the emails are simple support requests (e.g., password reset), while 10% are complex technical issues requiring deep reasoning. Currently, the application uses a single large, expensive Foundation Model (FM) for all classifications, which is hurting profit margins. Which architecture maximizes cost efficiency without sacrificing accuracy for complex cases?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Replace the large FM with a smaller, open-source model for all requests and rely on prompt engineering to improve its reasoning capabilities for complex issues.",
+        "explanation": "Incorrect. While replacing the large FM with a smaller model would significantly reduce costs, it would almost certainly sacrifice accuracy for the 10% of complex cases. Smaller models generally lack the advanced reasoning capabilities of larger models, and prompt engineering alone is unlikely to bridge this capability gap, failing to meet the requirement of maintaining accuracy.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Fine-tune the large FM on a dataset of email categories to reduce the number of tokens required in the instructions.",
+        "explanation": "Incorrect. Fine-tuning a model can improve its performance and potentially reduce the number of tokens needed in the prompt, but it is not the most cost-effective solution here. Fine-tuning incurs its own training costs and does not change the high inference cost of running the large FM for every request. The marginal savings from shorter prompts would be negligible compared to the massive savings from routing 90% of the traffic to a much cheaper model.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Implement a model router pattern using a lightweight classification model or logic to send simple emails to a smaller, cheaper FM and complex emails to the large FM.",
+        "explanation": "Correct. This describes a model router or tiered architecture, which is the most effective solution. A lightweight, inexpensive classifier first assesses the complexity of the email. The vast majority (90%) of simple requests are routed to a smaller, cheaper model sufficient for the task. Only the 10% of complex requests are sent to the expensive, powerful FM. This approach drastically reduces overall operational costs by matching the computational cost to the task's complexity, while preserving high accuracy for the challenging cases.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Use Amazon Bedrock Provisioned Throughput for the large FM to secure a lower rate per token given the high volume of simple requests.",
+        "explanation": "Incorrect. Amazon Bedrock Provisioned Throughput is a pricing optimization that provides a lower per-token cost for a guaranteed level of throughput. However, it does not solve the fundamental architectural inefficiency. Using this option means the expensive large FM is still being used for all requests, including the 90% of simple ones. The total cost would remain significantly higher than a tiered approach that avoids using the large model for simple tasks altogether.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 55,
+    "total": 60,
+    "domain": "2.4 Implement FM API integrations",
+    "stem": "A developer creates a translation service using Amazon Bedrock. The service exposes a REST API via Amazon API Gateway. Users report that for very long documents, the connection drops exactly after 29 seconds, even though the underlying Lambda function is still running and the Bedrock model is processing. What is the root cause and solution?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Cause: Bedrock API timeout. Solution: Request a quota increase for the model invocation duration to allow the Bedrock API to process longer documents without timing out.",
+        "explanation": "Incorrect. While Bedrock may have its own service quotas or timeouts for model invocations, the consistent and exact 29-second disconnection is a classic symptom of the API Gateway synchronous integration timeout, not a Bedrock API limit. Requesting a quota increase for model invocation duration would not resolve the API Gateway timeout.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Cause: Client-side browser timeout. Solution: Increase the timeout in the fetch request in the JavaScript client to prevent the browser from dropping the connection before the translation completes.",
+        "explanation": "Incorrect. Client-side timeouts vary by browser and network conditions and are unlikely to be exactly 29 seconds for all users. The consistent nature of the timeout across different users strongly indicates a server-side or infrastructure-level limit, which in this architecture is API Gateway.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Cause: API Gateway hard timeout. Solution: Switch to an asynchronous invocation pattern where API Gateway sends the request to Lambda (invocation type Event) and returns 202 Accepted immediately.",
+        "explanation": "Correct. Amazon API Gateway has a hard, non-adjustable integration timeout of 29 seconds for synchronous requests. Switching to an asynchronous invocation pattern, where API Gateway sends the request to Lambda with invocation type Event and immediately returns 202 Accepted, allows the long-running Bedrock processing to complete without the client connection dropping.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Cause: Lambda timeout is too low. Solution: Increase the Lambda function timeout to 15 minutes so that long-running Bedrock invocations can complete without being terminated by the function's execution limit.",
+        "explanation": "Incorrect. The problem description states the Lambda function is still running when the connection drops, so the Lambda timeout is not the root cause. The precise 29-second failure points specifically to the API Gateway integration timeout, not the Lambda execution timeout.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 56,
+    "total": 60,
+    "domain": "2.2 Implement model deployment strategies",
+    "stem": "A financial institution has fine-tuned a foundation model in Amazon Bedrock using its proprietary data to improve accuracy on domain-specific terminology. The institution now needs to deploy this custom model for use in a production application. According to AWS documentation, which purchasing option MUST be used to deploy and run inference with this fine-tuned model?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Amazon Bedrock On-Demand Throughput",
+        "explanation": "Incorrect. The On-Demand Throughput option is a pay-as-you-go model suitable for standard, pre-trained foundation models. It is not available for custom models that have been fine-tuned, as these require dedicated capacity that must be purchased via Provisioned Throughput.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Amazon Bedrock Batch Inference",
+        "explanation": "Incorrect. Batch Inference is a method for processing large datasets asynchronously, not a deployment or hosting option. A fine-tuned model must first be deployed using Provisioned Throughput before it can be invoked for either real-time or batch inference jobs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Amazon Bedrock Provisioned Throughput",
+        "explanation": "Correct. According to AWS documentation, using a custom, fine-tuned model requires purchasing Provisioned Throughput. This option reserves dedicated inference capacity for a specific base or custom model, which is mandatory for user-created fine-tuned models.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Amazon SageMaker JumpStart",
+        "explanation": "Incorrect. Amazon SageMaker JumpStart is a feature within the Amazon SageMaker service for discovering and deploying machine learning models. The scenario specifies that the model was fine-tuned and will be deployed within Amazon Bedrock, which is a distinct service.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 57,
+    "total": 60,
+    "domain": "2.4 Implement FM API integrations",
+    "stem": "Which field in the response header of an Amazon Bedrock InvokeModel API call should be monitored to determine the current number of input tokens processed, for the purpose of cost calculation and auditing?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "x-amzn-request-id",
+        "explanation": "The x-amzn-request-id header is a unique identifier assigned to each API request. Its primary purpose is for logging, tracing, and debugging. If you encounter an issue, this ID can be provided to AWS Support to help them investigate the specific request. It does not contain any metrics related to token counts or costs.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "x-amzn-bedrock-input-token-count",
+        "explanation": "This is the correct answer. The x-amzn-bedrock-input-token-count header in the API response explicitly provides the number of tokens in the input prompt that were processed by the model. This metric is essential for cost calculation and auditing, as Amazon Bedrock pricing is directly tied to the number of input and output tokens. Monitoring this header allows for precise usage tracking without needing to parse the original request.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "content-length",
+        "explanation": "The content-length header is a standard HTTP header that indicates the size of the response body in bytes. This value is not related to the number of tokens processed by the model. The relationship between byte size and token count is not direct and can vary, making this header unsuitable for accurate, token-based cost calculation and auditing.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "x-amzn-bedrock-invocation-latency",
+        "explanation": "The x-amzn-bedrock-invocation-latency header indicates the time, in milliseconds, that it took for Amazon Bedrock to process the request. While this is a valuable metric for monitoring performance and identifying bottlenecks, it provides no information about the number of tokens processed and is therefore not used for cost calculations based on token usage.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 58,
+    "total": 60,
+    "domain": "2.1 Implement agentic AI solutions and tool integrations",
+    "stem": "A Developer is building a customer support agent using Amazon Bedrock. The agent needs to retrieve order status from a legacy REST API that requires low latency. The retrieval logic is simple and stateless. The developer wants to implement this tool integration using the Model Context Protocol (MCP) to standardize the connection. Which compute service offers the MOST cost-effective and performant solution for hosting this MCP server?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Deploy the MCP server on an Amazon EC2 instance with an Application Load Balancer.",
+        "explanation": "Incorrect. Deploying on an Amazon EC2 instance involves managing servers, which introduces operational overhead and a higher baseline cost as the instance runs continuously. This approach is not the most cost-effective for a simple, stateless function that may have variable traffic.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Deploy the MCP server on Amazon EKS with a Cluster Autoscaler configuration.",
+        "explanation": "Incorrect. Amazon EKS is a managed Kubernetes service designed for complex, large-scale container orchestration. Using EKS for a simple, stateless MCP server is significant overkill, incurring substantial operational complexity and cost that are not justified by the requirements.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Deploy the MCP server as an AWS Lambda function behind a function URL or API Gateway.",
+        "explanation": "Correct. AWS Lambda is a serverless, event-driven compute service ideal for simple and stateless workloads. It automatically scales to handle requests, ensuring low latency and high performance. The pay-per-use pricing model makes it highly cost-effective, as you only pay for the compute time you consume. Exposing the function via an API Gateway or a Lambda Function URL provides a simple, managed HTTP endpoint for the MCP server.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "D",
+        "text": "Deploy the MCP server on Amazon ECS using AWS Fargate with a persistent task definition.",
+        "explanation": "Incorrect. While Amazon ECS with AWS Fargate is a serverless container solution, using a 'persistent task' means the container runs continuously, similar to an EC2 instance, which is not the most cost-effective model for this use case. It also introduces more complexity than a simple Lambda function.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 59,
+    "total": 60,
+    "domain": "3.1 Implement input and output safety controls",
+    "stem": "An enterprise is using a Large Language Model (LLM) to process internal wikis. They want to ensure that no proprietary project code names (formatted as 'PROJECT-Alpha-ThreeDigits', e.g., PROJECT-X-101) leak into the model outputs when summarizing documents for external partners. Standard PII filters do not catch these custom codes. What is the MOST efficient solution?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Configure an Amazon Bedrock Guardrail with a 'Sensitive information filter' using a custom Regex pattern to identify and mask the project codes.",
+        "explanation": "This is the correct and most efficient solution. Amazon Bedrock Guardrails are specifically designed for this use case. A 'Sensitive information filter' can be configured with a custom Regex pattern (e.g., PROJECT-[A-Za-z]+-\\d{3}) to automatically detect and mask the proprietary codes in real-time at inference. This is a scalable, centrally managed, and highly effective method that does not require data preprocessing or model retraining.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "B",
+        "text": "Use prompt engineering to provide the model with a list of all 5,000 active project codes and instruct it to never output them.",
+        "explanation": "This approach is incorrect because it is both impractical and unreliable. Including a list of 5,000 project codes in the prompt would consume a large portion of the model's context window (token limit) and significantly increase costs. More importantly, prompt-based instructions are not a robust security control; the model could easily ignore or misunderstand the instruction, leading to accidental data leakage. This method is brittle and does not scale.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "C",
+        "text": "Manually tag all project codes in the source documents and replace them with 'REDACTED' before indexing them in the vector database.",
+        "explanation": "This approach is incorrect because it is highly inefficient, not scalable, and prone to human error. Manually tagging thousands of codes across numerous documents is labor-intensive and requires continuous effort to reprocess documents as new codes are created.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Create a custom entity recognizer using Amazon Comprehend, train it on the project codes, and run an asynchronous batch job on the output text.",
+        "explanation": "This solution is incorrect because while technically feasible, it is overly complex and less efficient for this problem. Building, training, and managing a custom Amazon Comprehend entity recognizer adds significant development and operational overhead. For a well-defined pattern like the project codes, a simple Regex-based filter in a Guardrail is far more efficient. Additionally, running an asynchronous batch job is not suitable for real-time output filtering.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "multi": false
+  },
+  {
+    "questionNum": 60,
+    "total": 60,
+    "domain": "5.2 Troubleshoot GenAI applications",
+    "stem": "A healthcare application uses an LLM to extract patient symptoms from transcripts. Users report that the model occasionally hallucinates symptoms not present in the text. The developer wants to reduce these hallucinations without retraining the model. Which prompt engineering technique should be applied first?",
+    "options": [
+      {
+        "letter": "A",
+        "text": "Increase the temperature setting to 0.9 to generate more diverse symptom variations.",
+        "explanation": "Incorrect. Increasing the temperature parameter boosts randomness and creativity in the model's output. This is counterproductive for a factual extraction task and would increase the likelihood of hallucinations, not reduce them. For such tasks, a lower temperature (closer to 0) is preferred to make outputs more deterministic and focused.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "B",
+        "text": "Implement Chain of Thought (CoT) prompting asking the model to quote the specific text segment where the symptom is found before listing it.",
+        "explanation": "Correct. This technique forces the model to ground its responses directly in the provided source text. By requiring a direct quote as evidence for each extracted symptom, it establishes provenance for the output and constrains the model to only report information that is explicitly present. This is a highly effective and recommended first-step technique for improving reliability and reducing hallucinations in extraction tasks, especially in sensitive domains like healthcare.",
+        "isCorrect": true,
+        "isIncorrect": false
+      },
+      {
+        "letter": "C",
+        "text": "Remove the system prompt instructions to let the model decide the best extraction format.",
+        "explanation": "Incorrect. The system prompt provides essential context, instructions, and guardrails that guide the model's behavior. Removing it would lead to less predictable, unstructured, and inconsistent outputs, which would likely increase the frequency of hallucinations and formatting errors.",
+        "isCorrect": false,
+        "isIncorrect": true
+      },
+      {
+        "letter": "D",
+        "text": "Use negative constraints to tell the model what NOT to do, such as 'Do not list non-existent symptoms'.",
+        "explanation": "Incorrect. While negative constraints can sometimes be helpful, they are often less effective than providing clear, positive instructions. LLMs can struggle to interpret negations reliably. This approach is less direct and robust for preventing hallucinations compared to forcing evidence-based grounding (as in option B), making it a less suitable first choice.",
+        "isCorrect": false,
+        "isIncorrect": true
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "multi": false
+  }
+]

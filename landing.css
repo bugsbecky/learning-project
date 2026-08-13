@@ -8,6 +8,7 @@
   --js: #0f766e;
   --cs: #2563eb;
   --systems: #7c3aed;
+  --certs: #0e7490;
   --projects: #be123c;
 }
 
@@ -188,6 +189,7 @@ h1 {
 .tag.js { background: var(--js); }
 .tag.cs { background: var(--cs); }
 .tag.systems { background: var(--systems); }
+.tag.certs { background: var(--certs); }
 .tag.projects { background: var(--projects); }
 
 .section {

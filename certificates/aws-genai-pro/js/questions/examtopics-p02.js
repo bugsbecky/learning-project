@@ -1,0 +1,122 @@
+AIP.registerQuestions([
+  {
+    id: "et-11",
+    source: "examtopics",
+    page: 2,
+    chapters: ["04", "15"],
+    domain: 3,
+    stem: "A company is using Amazon Bedrock to design an application to help researchers apply for grants. The application is based on an Amazon Nova Pro foundation model (FM). The application contains four required inputs and must provide responses in a consistent text format. The company wants to receive a notification in Amazon Bedrock if a response contains bullying language. However, the company does not want to block all flagged responses. The company creates an Amazon Bedrock flow that takes an input prompt and sends it to the Amazon Nova Pro FM. The Amazon Nova Pro FM provides a response. Which additional steps must the company take to meet these requirements? (Choose two.)",
+    choices: [{id:"A", text:"Use Amazon Bedrock Prompt Management to specify the required inputs as variables. Select an Amazon Nova Pro FM. Specify the output format for the response. Add the prompt to the prompts node of the flow."}, {id:"B", text:"Create an Amazon Bedrock guardrail that applies the hate content filter. Set the filter response to block. Add the guardrail to the prompts node of the flow."}, {id:"C", text:"Create an Amazon Bedrock prompt router. Specify an Amazon Nova Pro FM. Add the required inputs as variables to the input node of the flow. Add the prompt router to the prompts node. Add the output format to the output node."}, {id:"D", text:"Create an Amazon Bedrock guardrail that applies the insults content filter. Set the filter response to detect. Add the guardrail to the prompts node of the flow."}, {id:"E", text:"Create an Amazon Bedrock application inference profile that specifies an Amazon Nova Pro FM. Specify the output format for the response in the description. Include a tag for each of the input variables. Add the profile to the prompts node of the flow."}],
+    correct: ["A", "D"],
+    why: "A and D are required: Prompt Management supplies the four inputs and output format, and an insults guardrail set to detect notifies without blocking every flagged response.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-12",
+    source: "examtopics",
+    page: 2,
+    chapters: ["18"],
+    domain: 5,
+    stem: "A healthcare company is using Amazon Bedrock to build a Retrieval Augmented Generation (RAG) application that helps practitioners make clinical decisions. The application must achieve high accuracy for patient information retrievals, identify hallucinations in generated content, and reduce human review costs. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Use Amazon Comprehend to analyze and classify RAG responses and to extract medical entities and relationships. Use AWS Step Functions to orchestrate automated evaluations. Configure Amazon CloudWatch metrics to track entity recognition confidence scores. Configure CloudWatch to send an alert when accuracy falls below specified thresholds."}, {id:"B", text:"Implement automated large language model (LLM)-based evaluations that use a specialized model that is fine-tuned for medical content to assess all responses. Deploy AWS Lambda functions to parallelize evaluations. Publish results to Amazon CloudWatch metrics that track relevance and factual accuracy."}, {id:"C", text:"Configure Amazon CloudWatch Synthetics to generate test queries that have known answers on a regular schedule, and track model success rates. Set up dashboards that compare synthetic test results against expected outcomes."}, {id:"D", text:"Deploy a hybrid evaluation system that uses an automated LLM-as-a-judge evaluation to initially screen responses and targeted human reviews for edge cases. Use Amazon SageMaker Feature Store to maintain evaluation datasets. Use a built-in Amazon Bedrock evaluation to track retrieval precision and hallucination rates."}],
+    correct: ["D"],
+    why: "D is correct: an LLM-as-a-judge screen plus Bedrock evaluation tracks retrieval precision and hallucinations, with humans only on edge cases.",
+    badges: ["EXAMTOPICS", "DOMAIN 5"]
+  },
+  {
+    id: "et-13",
+    source: "examtopics",
+    page: 2,
+    chapters: ["16"],
+    domain: 3,
+    stem: "Company configures a landing zone in AWS Control Tower. The company handles sensitive data that must remain within the European Union. The company must use only the eu-central-1 Region. The company uses SCPs to enforce data residency policies. GenAI developers at the company are assigned IAM roles that have full permissions for Amazon Bedrock. The company must ensure that GenAI developers can use the Amazon Nova Pro model through Amazon Bedrock only by using cross-Region inference (CRI) and only in eu-central-1. The company enables model access for the GenAI developer IAM roles in Amazon Bedrock. However, when a GenAI developer attempts to invoke the model through the Amazon Bedrock Chat/Text playground, the GenAI developer receives the following error. User: arn:aws:sts::123456789012:assumed-role/AssumedDevRole/DevUserName Action: bedrock:InvokeModelWithResponseStream On resource(s): arn:aws:bedrock:eu-west-3::foundation-model/amazon.nova-pro-v1:0 Context: a service control policy explicitly denies the action The company needs a solution to resolve the error. The solution must retain the company's existing governance controls and must provide precise access control. The solution must comply with the company's existing data residency policies. Which combination of solutions will meet these requirements? (Choose two.)",
+    choices: [{id:"A", text:"Add an AdministratorAccess policy to the GenAI developer IAM role."}, {id:"B", text:"Extend the existing SCPs to enable CRI for the eu.amazon.nova-pro-v1:0 inference profile."}, {id:"C", text:"Enable Amazon Bedrock model access for Amazon Nova Pro in the eu-west-3 Region."}, {id:"D", text:"Validate that the GenAI developer IAM roles have permissions to invoke Amazon Nova Pro through the eu.amazon.nova-pro.v1:0 inference profile on all European Union AWS Regions that can serve the model."}, {id:"E", text:"Extend the existing SCP to enable CRI for the eu.* inference profile."}],
+    correct: ["B", "D"],
+    why: "B and D are required: allow the EU Nova Pro cross-Region inference profile in SCPs and IAM so playground invokes stay inside approved residency controls.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-14",
+    source: "examtopics",
+    page: 2,
+    chapters: ["15"],
+    domain: 3,
+    stem: "A financial services company is developing a customer service AI assistant by using Amazon Bedrock. The AI assistant must not discuss investment advice with users. The AI assistant must block harmful content, mask personally identifiable information (PII), and maintain audit trails for compliance reporting. The AI assistant must apply content filtering to both user inputs and model responses based on content sensitivity. The company requires an Amazon Bedrock guardrail configuration that will effectively enforce policies with minimal false positives. The solution must provide multiple handling strategies for multiple types of sensitive content. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Configure a single guardrail and set content filters to high for all categories. Set up denied topics for investment advice and include sample phrases to block. Set up sensitive information filters that apply the block action for all PII entities. Apply the guardrail to all model inference calls."}, {id:"B", text:"Configure multiple guardrails by using tiered policies. Create one guardrail and set content filters to high. Configure the guardrail to block PII for public interactions. Configure a second guardrail and set content filters to medium. Configure the second guardrail to mask PII for internal use. Configure multiple topic-specific guardrails to block investment advice and set up contextual grounding checks."}, {id:"C", text:"Configure a guardrail and set content filters to medium for harmful content. Set up denied topics for investment advice and include clear definitions and sample phrases to block. Configure sensitive information filters to mask PII in responses and to block financial information in inputs. Enable both input and output evaluations that use custom blocked messages for audits."}, {id:"D", text:"Create a separate guardrail for each use case. Create one guardrail that applies a harmful content filter. Create a guardrail to apply topic filters for investment advice. Create a guardrail to apply sensitive information filters to block PII. Use AWS Step Functions to chain the guardrails together sequentially. Use conditional logic based on content classification."}],
+    correct: ["C"],
+    why: "C is correct: medium content filters, denied topics for investment advice, and PII mask/block with input and output evaluation keep false positives low.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-15",
+    source: "examtopics",
+    page: 2,
+    chapters: ["09", "10", "20"],
+    domain: 1,
+    stem: "An ecommerce company is developing a generative AI (GenAI) solution that uses Amazon Bedrock with Anthropic Claude to recommend products to customers. Customers report that some of the recommended products are not available for sale on the website or are not relevant to the customer. Customers also report that the solutions takes a long time to generate some recommendations. The company investigates the issues and finds that most interactions between customers and the product recommendation solution are unique. The company confirms that the solutions recommends products that are not in the company's product catalog. The company must resolve these issues. Which solution will meet this requirement?",
+    choices: [{id:"A", text:"Increase grounding within Amazon Bedrock Guardrails. Enable Automated Reasoning checks. Set up provisioned throughput."}, {id:"B", text:"Use prompt engineering to restrict the model responses to relevant products. Use streaming techniques such as the InvokeModelWithResponseStream action to reduce perceived latency for the customers."}, {id:"C", text:"Create an Amazon Bedrock knowledge base. Implement Retrieval Augmented Generation (RAG). Set the PerformanceConfigLatency parameter to optimized."}, {id:"D", text:"Store product catalog data in Amazon OpenSearch Service. Validate the model's product recommendations against the product catalog. Use Amazon DynamoDB to implement response caching."}],
+    correct: ["C"],
+    why: "C is correct: a Knowledge Base RAG grounds recommendations in the product catalog, and PerformanceConfigLatency optimized reduces generation time.",
+    badges: ["EXAMTOPICS", "DOMAIN 1"]
+  },
+  {
+    id: "et-16",
+    source: "examtopics",
+    page: 2,
+    chapters: ["11", "12", "14"],
+    domain: 2,
+    stem: "A company is using AWS Lambda and REST APIs to build a reasoning agent to automate support workflows. The system must preserve memory across interactions, share the relevant agent state, and support event-driven invocation and synchronous invocation. The system must also enforce access control and session-based permissions. Which combination of steps provides the MOST scalable solution? (Choose two.)",
+    choices: [{id:"A", text:"Use Amazon Bedrock AgentCore to manage memory and session-aware reasoning. Deploy the agent with built-in identity support, event handling, and observability."}, {id:"B", text:"Register the Lambda functions and the REST APIs as actions by using Amazon API Gateway and Amazon EventBridge. Enable Amazon Bedrock AgentCore to invoke the Lambda functions and the REST APIs without custom orchestration code."}, {id:"C", text:"Use Amazon Bedrock Agents for reasoning and conversation management. Use AWS Step Functions and Amazon SQS queues for orchestration. Store the agent state in Amazon DynamoDB to maintain memory between steps."}, {id:"D", text:"Deploy the reasoning logic as a container on Amazon ECS behind Amazon API Gateway. Use Amazon Aurora to store memory data and identity data."}, {id:"E", text:"Build a custom RAG pipeline by using Amazon Kendra and Amazon Bedrock. Use AWS Lambda to orchestrate tool invocations. Store the agent state in Amazon S3."}],
+    correct: ["A", "B"],
+    why: "A and B are required: AgentCore holds session memory and identity, and it invokes registered Lambda and REST actions without custom orchestration.",
+    badges: ["EXAMTOPICS", "DOMAIN 2"]
+  },
+  {
+    id: "et-17",
+    source: "examtopics",
+    page: 2,
+    chapters: ["09", "10"],
+    domain: 1,
+    stem: "A financial services company is developing a Retrieval Augmented Generation (RAG) application to help investment analysts query complex financial relationships across multiple investment vehicles, market sectors, and regulatory environments. The dataset contains highly interconnected entities that have multi-hop relationships. The analysts must be able to examine the relationships holistically to provide accurate investment guidance. The application must deliver comprehensive answers that capture indirect relationships between financial entities. The application must produce responses in less than 3 seconds. Which solution will meet these requirements with the LEAST operational overhead?",
+    choices: [{id:"A", text:"Use Amazon Bedrock Knowledge Bases with Graph RAG and Amazon Neptune Analytics to store the financial data. Analyze the multi-hop relationships between entities and automatically identify related information across documents."}, {id:"B", text:"Use Amazon Bedrock Knowledge Bases and an Amazon OpenSearch Service vector store to implement custom relationship identification logic that uses AWS Lambda functions to query multiple vector embeddings in sequence."}, {id:"C", text:"Use an Amazon OpenSearch Serverless vector database with k-nearest neighbor (k-NN) searches. Implement manual relationship mapping in an application layer that runs in an Amazon EC2 Auto Scaling group."}, {id:"D", text:"Use Amazon DynamoDB to store financial data in a custom indexing system. Use an AWS Lambda function to query relevant records based on input questions. Use Amazon SageMaker AI to generate responses."}],
+    correct: ["A"],
+    why: "A is correct: Knowledge Bases Graph RAG with Neptune Analytics follows multi-hop financial relationships with managed infrastructure.",
+    badges: ["EXAMTOPICS", "DOMAIN 1"]
+  },
+  {
+    id: "et-18",
+    source: "examtopics",
+    page: 2,
+    chapters: ["15", "19"],
+    domain: 3,
+    stem: "A healthcare company uses Amazon Bedrock to deploy an application that generates summaries of clinical documents. The application experiences inconsistent response quality with occasional factual hallucinations. Monthly costs exceed the company's projections by 40%. A GenAI developer must implement a near real-time monitoring solution to detect hallucinations, identify abnormal token consumption, and provide early warnings of cost anomalies. The solution must require minimal custom development work and maintenance overhead. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Configure Amazon CloudWatch alarms to monitor InputTokenCount and OutputTokenCount metrics to detect anomalies. Store model invocation logs in an Amazon S3 bucket. Use AWS Glue and Amazon Athena to identify potential hallucinations."}, {id:"B", text:"Run Amazon Bedrock evaluation jobs that use LLM-based judgments to detect hallucinations. Configure Amazon CloudWatch to track token usage. Create an AWS Lambda function to process CloudWatch metrics. Configure the Lambda function to send usage pattern notifications."}, {id:"C", text:"Configure Amazon Bedrock to store model invocation logs in an Amazon S3 bucket. Enable text output logging. Configure Amazon Bedrock guardrails to run contextual grounding checks to detect hallucinations. Create Amazon CloudWatch anomaly detection alarms for token usage metrics."}, {id:"D", text:"Use AWS CloudTrail to log all Amazon Bedrock API calls. Create a custom dashboard in Amazon QuickSight to visualize token usage patterns. Use Amazon SageMaker Model Monitor to detect quality drift in generated summaries."}],
+    correct: ["C"],
+    why: "C is correct: invocation logs plus contextual grounding checks detect hallucinations, and CloudWatch anomaly alarms flag token-cost spikes.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-19",
+    source: "examtopics",
+    page: 2,
+    chapters: ["17"],
+    domain: 3,
+    stem: "A company is building a generative AI (GenAI) application that produces content based on a variety of internal and external data sources. The company wants to ensure that the generated output is fully traceable. The application must support data source registration and enable metadata tagging to attribute content to its original source. The application must also maintain audit logs of data access and usage throughout the pipeline. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Use AWS Lake Formation to catalog data sources and control access. Apply metadata tags directly in Amazon S3. Use AWS CloudTrail to monitor API activity."}, {id:"B", text:"Use AWS Glue Data Catalog to register and tag data sources. Use Amazon CloudWatch Logs to monitor access patterns and application behavior."}, {id:"C", text:"Store data in Amazon S3 and use object tagging for attribution. Use AWS Glue Data Catalog to manage schema information. Use AWS CloudTrail to log access to S3 buckets."}, {id:"D", text:"Use AWS Glue Data Catalog to register all data sources. Apply metadata tags to attribute data sources. Use AWS CloudTrail to log access and activity across services."}],
+    correct: ["D"],
+    why: "D is correct: Glue Data Catalog registers and tags sources, and CloudTrail provides pipeline-wide access audit logs.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-20",
+    source: "examtopics",
+    page: 2,
+    chapters: ["13"],
+    domain: 2,
+    stem: "A financial services company needs to build a document analysis system that uses Amazon Bedrock to process quarterly reports. The system must analyze financial data, perform sentiment analysis, and validate compliance across batches of reports. Each batch contains 5 reports. Each report requires multiple foundation model (FM) calls. The solution must finish the analysis within 10 seconds for each batch. Current sequential processing takes 45 seconds for each batch. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Use AWS Lambda functions with provisioned concurrency to process each analysis type sequentially. Configure the Lambda function timeouts to 10 seconds. Configure automatic retries with exponential backoff."}, {id:"B", text:"Use AWS Step Functions with a Parallel state to invoke separate AWS Lambda functions for each analysis type simultaneously. Configure Amazon Bedrock client timeouts. Use Amazon CloudWatch metrics to track execution time and model inference latency."}, {id:"C", text:"Create an Amazon SQS queue to buffer analysis requests. Deploy multiple AWS Lambda functions with reserved concurrency. Configure each Lambda function to process different aspects of each report sequentially and then combine the results."}, {id:"D", text:"Deploy an Amazon ECS cluster that runs containers that process each report sequentially. Use a load balancer to distribute batch workloads. Configure an auto-scaling policy based on CPU utilization to handle demand fluctuations."}],
+    correct: ["B"],
+    why: "B is correct: a Step Functions Parallel state runs each analysis type concurrently so the batch finishes within 10 seconds.",
+    badges: ["EXAMTOPICS", "DOMAIN 2"]
+  }
+]);

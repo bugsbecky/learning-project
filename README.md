@@ -8,13 +8,14 @@ High-level map of the monorepo (stacks: CodeStep UI in **`frontend/`**, Bun-test
 
 | Path | What it is |
 |------|------------|
-| [`index.html`](index.html) | Root landing page for the whole learning repo: CodeStep, beginner JS, Java, CS roadmap, system design, Spring Boot, and projects. |
+| [`index.html`](index.html) | Root landing page for the whole learning repo: CodeStep, beginner JS, Java, CS roadmap, system design, AIP-C01, Spring Boot, and projects. |
 | [`frontend/`](frontend/README.md) | **CodeStep** — Vite + React + TypeScript + Tailwind learner app (guided examples, playground, worker sandbox). Course logic and highlighting live under [`frontend/src/domains/`](frontend/src/domains/) (each subdomain may have a short `README.md`). |
 | [`beginner-js/`](beginner-js/README.md) | **Topic folders** (variables, math, strings, …) with `tasks.js` / `tasks.test.js`; run tests from the repo root with **`make`** — see [`Makefile`](Makefile). |
 | [`docs/codestep/`](docs/codestep/overview.md) | Product overview and **implementation phases** [`01.md`](docs/codestep/01.md)–[`04.md`](docs/codestep/04.md). |
 | [`system-design/`](system-design/index.html) | Static HTML/CSS/JS **architecture explorer**; open `index.html` in a browser — separate from the React app. |
 | [`data-structures/`](data-structures/README.md) | Static HTML/CSS/JS **CS roadmap** with data structures, algorithms, web/infra foundations, DevOps, Git, Docker, and auth basics; open `index.html` in a browser. |
 | [`java/`](java/README.md) | Static HTML/CSS/JS **Java learning hub** — Ubuntu-only Java 21 LTS curriculum from setup through methods, objects, arrays, strings, collections, exceptions, I/O, debugging, testing, build tools, Git, REST, UML, JVM memory, design patterns, and practice projects; open [`java/index.html`](java/index.html). |
+| [`certificates/aws-genai-pro/`](certificates/aws-genai-pro/README.md) | Static HTML/CSS/JS **AIP-C01** prep. Example-first chapters around one company chat, quizzes, and a mock exam. Open [`certificates/aws-genai-pro/index.html`](certificates/aws-genai-pro/index.html). |
 | [`spring-boot-system-design/`](spring-boot-system-design/README.md) | Step-by-step Java, Spring Boot, Docker, monolith, messaging, and microservices backend curriculum. |
 | [`projects/`](projects/README.md) | **Beginner project curriculum** — four scaffolded learning projects (Weather, Docker, CLI, React) with docs only; you write the code. |
 | [`AGENTS.md`](AGENTS.md) | Short entry for **AI agents and automation** (stack summary, `.cursor/` layout); full navigation stays in this README. |
@@ -40,6 +41,7 @@ learning-project/
 ├── system-design/            # Standalone architecture viewer (index.html)
 ├── data-structures/          # CS roadmap viewer (index.html)
 ├── java/                     # Java learning hub (index.html)
+├── certificates/aws-genai-pro/ # AIP-C01 GenAI Professional prep (index.html)
 ├── spring-boot-system-design/# Java/Spring/Docker system-design curriculum
 ├── projects/                 # Beginner 4-project curriculum (docs + scaffolding)
 └── README.md

@@ -1,0 +1,122 @@
+AIP.registerQuestions([
+  {
+    id: "et-21",
+    source: "examtopics",
+    page: 3,
+    chapters: ["15", "19"],
+    domain: 3,
+    stem: "A company is using Amazon Bedrock to build a customer-facing AI assistant to handle sensitive customer inquiries. The company must use defense-in-depth safety controls to block sophisticated prompt injection attacks. The company must keep audit logs of all safety interventions. The AI assistant must have cross-Region failover capabilities. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Configure Amazon Bedrock guardrails to use content filters to protect against prompt injection attacks. Set the content filters to high. Use a guardrail profile to implement cross-Region guardrail inference. Use Amazon CloudWatch Logs with custom metrics to capture detailed guardrail intervention events."}, {id:"B", text:"Configure Amazon Bedrock guardrails to use content filters to protect against prompt injection attacks. Set the content filters to high. Use AWS WAF to block suspicious inputs. Use AWS CloudTrail to log API calls for audits."}, {id:"C", text:"Deploy Amazon Comprehend custom classification to detect prompt injection attacks. Use Amazon API Gateway to validate requests. Use Amazon CloudWatch Logs with custom metrics to capture detailed intervention events."}, {id:"D", text:"Configure Amazon Bedrock guardrails to use custom content filters to protect against harmful content. Set the content filters to high. Use word filters to protect against known attack patterns. Configure cross-Region guardrail replication to provide failover capabilities. Store logs in AWS CloudTrail for compliance auditing."}],
+    correct: ["A"],
+    why: "A is correct: high prompt-attack content filters, a cross-Region guardrail profile for failover, and CloudWatch Logs capture every intervention.",
+    badges: ["EXAMTOPICS", "DOMAIN 3"]
+  },
+  {
+    id: "et-22",
+    source: "examtopics",
+    page: 3,
+    chapters: ["13", "20"],
+    domain: 4,
+    stem: "A company is designing a canary deployment strategy for a payment processing API. The system must support automated gradual traffic shifting between multiple Amazon Bedrock models based on real-time inference metrics, historical traffic patterns, and service health. The solution must be able to gradually increase traffic to new model versions. The system must increase traffic if metrics remain healthy and decrease traffic if the performance degrades below acceptable thresholds. The company needs to comprehensively monitor inference latency and error rates during the deployment phase. The company must also be able to halt deployments and revert to a previous model version without any manual intervention. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Use Amazon Bedrock with provisioned throughput to host the versions of the model. Configure an Amazon EventBridge rule to invoke an AWS Step Functions workflow when a new model version is released. Configure the workflow to shift traffic in stages, wait for a specified time period, and invoke an AWS Lambda function to check Amazon CloudWatch performance metrics. Configure the workflow to increase traffic if the metrics meet thresholds and to trigger a traffic rollback if performance metrics fall below thresholds."}, {id:"B", text:"Use AWS Lambda functions to invoke various Amazon Bedrock model versions. Use an Amazon API Gateway HTTP API with stage variables and weighted routing to shift traffic gradually to new model versions. Use Amazon CloudWatch to monitor performance metrics. Use external logic to adjust traffic between model versions and to roll back if performance falls below thresholds."}, {id:"C", text:"Use Amazon SageMaker AI endpoint variants to represent multiple Amazon Bedrock model versions. Use variant weights to shift traffic. Use Amazon CloudWatch to monitor performance metrics. Use SageMaker Model Monitor to trigger AWS Lambda functions to roll back a model deployment if performance drops below a specified threshold. Configure an Amazon EventBridge rule to roll back model deployments if an anomaly is detected."}, {id:"D", text:"Use Amazon OpenSearch Service to track inference logs. Configure OpenSearch Service to invoke an AWS Systems Manager Automation runbook to update Amazon Bedrock model endpoints to shift traffic based on the inference logs."}],
+    correct: ["A"],
+    why: "A is correct: provisioned-throughput model versions plus a Step Functions canary shift traffic from CloudWatch metrics and roll back automatically.",
+    badges: ["EXAMTOPICS", "DOMAIN 4"]
+  },
+  {
+    id: "et-23",
+    source: "examtopics",
+    page: 3,
+    chapters: ["20", "21"],
+    domain: 4,
+    stem: "A financial services company uses an AI application to process financial documents by using Amazon Bedrock. During business hours, the application handles approximately 10,000 requests each hour, which requires consistent throughput. The company uses the CreateProvisionedModelThroughput API to purchase provisioned throughput. Amazon CloudWatch metrics show that the provisioned capacity is unused while on-demand requests are being throttled. The company finds the following code in the application: python response = bedrock_runtime.invoke_model(modelId=\"anthropic.claude-v2\", body=json.dumps(payload)) The company needs the application to use the provisioned throughput and to resolve the throttling issues. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Increase the number of model units (MUs) in the provisioned throughput configuration."}, {id:"B", text:"Replace the model ID parameter with the ARN of the provisioned model that the CreateProvisionedModelThroughput API returns."}, {id:"C", text:"Add exponential backoff retry logic to handle throttling exceptions during peak hours."}, {id:"D", text:"Modify the application to use the InvokeModelWithResponseStream API instead of the InvokeModel API."}],
+    correct: ["B"],
+    why: "B is correct: invoke the provisioned-throughput model ARN instead of the on-demand model ID so PT is used and on-demand throttling stops.",
+    badges: ["EXAMTOPICS", "DOMAIN 4"]
+  },
+  {
+    id: "et-24",
+    source: "examtopics",
+    page: 3,
+    chapters: ["09", "10"],
+    domain: 1,
+    stem: "A company is building an AI advisory application by using Amazon Bedrock. The application will provide recommendations to customers. The company needs the application to explain its reasoning process and cite specific sources for data. The application must retrieve information from company data sources and show step-by-step reasoning for recommendations. The application must also link data claims to source documents and maintain response latency under 3 seconds. Which solution will meet these requirements with the LEAST operational overhead?",
+    choices: [{id:"A", text:"Use Amazon Bedrock Knowledge Bases with source attribution enabled. Use the Anthropic Claude Messages API with RAG to set high-relevance thresholds for source documents. Store reasoning and citations in Amazon S3 for auditing purposes."}, {id:"B", text:"Use Amazon Bedrock with Anthropic Claude models and extended thinking. Configure a 4,000-token thinking budget. Store reasoning traces and citations in Amazon DynamoDB for auditing purposes."}, {id:"C", text:"Configure Amazon SageMaker AI with a custom Anthropic Claude model. Use the model's reasoning parameter and AWS Lambda to process responses. Add source citations from a separate Amazon RDS database."}, {id:"D", text:"Use Amazon Bedrock with Anthropic Claude models and chain-of-thought reasoning. Configure custom retrieval tracking with the Amazon Bedrock Knowledge Bases API. Use Amazon CloudWatch to monitor response latency metrics."}],
+    correct: ["A"],
+    why: "A is correct: Knowledge Bases with source attribution and high RAG relevance thresholds cite documents with little custom tracking.",
+    badges: ["EXAMTOPICS", "DOMAIN 1"]
+  },
+  {
+    id: "et-25",
+    source: "examtopics",
+    page: 3,
+    chapters: ["19", "21"],
+    domain: 4,
+    stem: "A financial services company uses multiple foundation models (FMs) through Amazon Bedrock for its generative AI (GenAI) applications. To comply with a new regulation for GenAI use with sensitive financial data, the company needs a token management solution. The token management solution must proactively alert when applications approach model-specific token limits. The solution must also process more than 5,000 requests each minute and maintain token usage metrics to allocate costs across business units. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Develop model-specific tokenizers in an AWS Lambda function. Configure the Lambda function to estimate token usage before sending requests to Amazon Bedrock. Configure the Lambda function to publish metrics to Amazon CloudWatch and trigger alarms when requests approach thresholds. Store detailed token usage in Amazon DynamoDB to report costs."}, {id:"B", text:"Implement Amazon Bedrock Guardrails with token quota policies. Capture metrics on rejected requests. Configure Amazon EventBridge rules to trigger notifications based on Amazon Bedrock Guardrails metrics. Use Amazon CloudWatch dashboards to visualize token usage trends across models."}, {id:"C", text:"Deploy an Amazon SQS dead-letter queue for failed requests. Configure an AWS Lambda function to analyze token-related failures. Use Amazon CloudWatch Logs Insights to generate reports on token usage patterns based on error logs from Amazon Bedrock API responses."}, {id:"D", text:"Use Amazon API Gateway to create a proxy for all Amazon Bedrock API calls. Configure request throttling based on custom usage plans with predefined token quotas. Configure API Gateway to reject requests that will exceed token limits."}],
+    correct: ["A"],
+    why: "A is correct: Lambda tokenizers estimate usage before Bedrock calls, CloudWatch alarms fire near limits, and DynamoDB stores chargeback metrics.",
+    badges: ["EXAMTOPICS", "DOMAIN 4"]
+  },
+  {
+    id: "et-26",
+    source: "examtopics",
+    page: 3,
+    chapters: ["10", "11", "12"],
+    domain: 2,
+    stem: "A retail company is developing a customer service application that must process 10,000 daily queries about products, orders, and warranties. The application must be able to respond to queries about 50,000 product documents that are updated every day. The application must integrate with an order management API to check the status of orders and to help process returns. The application must maintain context throughout multi-turn interactions with customers. The company must collect complete audit trails for application responses. Which solution will meet these requirements with the LEAST operational overhead?",
+    choices: [{id:"A", text:"Deploy a fine-tuned Amazon Bedrock Anthropic Claude model for each product category. Create AWS Lambda functions to connect each model to the order management API. Store conversation history in Amazon DynamoDB."}, {id:"B", text:"Create a custom model that uses continued pre-training on Amazon Bedrock to handle all product documentation. Set up an Amazon API Gateway REST API that uses AWS Lambda functions to connect the model to the order management API."}, {id:"C", text:"Use Amazon SageMaker AI with containers to deploy models. Use Amazon Kendra to search product documents. Use AWS Step Functions to orchestrate calls to the order management API."}, {id:"D", text:"Use an Amazon Bedrock agent with action groups to integrate with the order management API. Associate an Amazon Bedrock knowledge base with the agent to search product documentation by using Retrieval Augmentation Generation (RAG). Enable trace events to capture audit trails."}],
+    correct: ["D"],
+    why: "D is correct: a Bedrock agent with action groups calls the order API, a knowledge base retrieves product docs, and trace events provide the audit trail.",
+    badges: ["EXAMTOPICS", "DOMAIN 2"]
+  },
+  {
+    id: "et-27",
+    source: "examtopics",
+    page: 3,
+    chapters: ["13"],
+    domain: 2,
+    stem: "An ecommerce company is using Amazon Bedrock to build a generative AI (GenAI) application. The application uses AWS Step Functions to orchestrate a multi-agent workflow to produce detailed product descriptions. The workflow consists of three sequential states: a description generator, a technical specifications validator, and a brand voice consistency checker. Each state produces intermediate reasoning traces and outputs that are passed to the next state. The application uses an Amazon S3 bucket for process storage and to store outputs. During testing, the company discovers that outputs between Step Functions states frequently exceed the 256 KB quota and cause workflow failures. A GenAI Developer needs to revise the application architecture to efficiently handle the Step Functions 256 KB quota and maintain workflow observability. The revised architecture must preserve the existing multi-agent reasoning and acting (ReAct) pattern. Which solution will meet these requirements with the LEAST operational overhead?",
+    choices: [{id:"A", text:"Store intermediate outputs in Amazon DynamoDB. Pass only references between states. Create a Map state that retrieves the complete data from DynamoDB when required for each agent's processing step."}, {id:"B", text:"Configure an Amazon Bedrock integration to use the S3 bucket URI in the input parameter for large outputs. Use the ResultPath field and the ResultSelector field to route S3 references between the agent steps while maintaining the sequential validation workflow."}, {id:"C", text:"Use AWS Lambda functions to compress outputs to less than 256 KB before each agent state. Configure each agent task to decompress the outputs before processing and to compress results before passing them to the next state."}, {id:"D", text:"Configure a separate Step Functions state machine to handle each agent's processing. Use Amazon EventBridge to coordinate the execution flow between state machines. Use S3 references for the outputs as event data."}],
+    correct: ["B"],
+    why: "B is correct: pass S3 URIs through the Bedrock/Step Functions result path so intermediate ReAct payloads stay under the 256 KB quota.",
+    badges: ["EXAMTOPICS", "DOMAIN 2"]
+  },
+  {
+    id: "et-28",
+    source: "examtopics",
+    page: 3,
+    chapters: ["08", "09"],
+    domain: 1,
+    stem: "A company provides a service that helps users from around the world discover new restaurants. The service has 50 million monthly active users. The company wants to implement a semantic search solution across a database that contains 20 million restaurants and 200 million reviews. The company currently stores the data in a PostgresQL database. The solution must support complex natural language queries and return results for at least 95% of queries within 500 ms. The solution must maintain data freshness for restaurant details that update hourly. The solution must also scale cost-effectively during peak usage periods. Which solution will meet these requirements with the LEAST development effort?",
+    choices: [{id:"A", text:"Migrate the restaurant data to Amazon OpenSearch Service. Implement keyword-based search rules that use custom analyzers and relevance tuning to find restaurants based on attributes such as cuisine type, feature, and location. Create Amazon API Gateway HTTP API endpoints to transform user queries into structured search parameters."}, {id:"B", text:"Migrate the restaurant data to Amazon OpenSearch Service. Use a foundation model (FM) in Amazon Bedrock to generate vector embeddings from restaurant descriptions, reviews, and menu items. When users submit natural language queries, convert the queries to embeddings by using the same FM. Perform k-nearest neighbors (k-NN) searches to find semantically similar results."}, {id:"C", text:"Keep the restaurant data in PostgresQL and implement a pgvector extension. Use a foundation model (FM) in Amazon Bedrock to generate vector embeddings from restaurant data. Store the vector embeddings directly in PostgreSQL. Create an AWS Lambda function to convert natural language queries to vector representations by using the same FM. Configure the Lambda function to perform similarity searches within the database."}, {id:"D", text:"Migrate restaurant data to an Amazon Bedrock knowledge base by using a custom ingestion pipeline. Configure the knowledge base to automatically generate embeddings from restaurant information. Use the Amazon Bedrock Retrieve API with built-in vector search capabilities to query the knowledge base directly by using natural language input."}],
+    correct: ["B"],
+    why: "B is correct: Bedrock embeddings plus OpenSearch k-NN semantic search meet the 500 ms latency target without a custom pgvector stack.",
+    badges: ["EXAMTOPICS", "DOMAIN 1"]
+  },
+  {
+    id: "et-29",
+    source: "examtopics",
+    page: 3,
+    chapters: ["18", "23"],
+    domain: 5,
+    stem: "A medical company uses Amazon Bedrock to power a clinical documentation summarization system. The system produces inconsistent summaries when handling complex clinical documents. The system performed well on simple clinical documents. The company needs a solution that diagnoses inconsistencies, compares prompt performance against established metrics, and maintains historical records of prompt versions. Which solution will meet these requirements?",
+    choices: [{id:"A", text:"Create multiple prompt variants by using Prompt management in Amazon Bedrock. Manually test the prompts with simple clinical documents. Deploy the highest performing version by using the Amazon Bedrock console."}, {id:"B", text:"Implement version control for prompts in a code repository with a test suite that contains complex clinical documents and quantifiable evaluation metrics. Use an automated testing framework to compare prompt versions and document performance patterns."}, {id:"C", text:"Deploy each new prompt version to separate Amazon Bedrock API endpoints. Split production traffic between the endpoints. Configure Amazon CloudWatch to capture response metrics and user feedback for automatic version selection."}, {id:"D", text:"Create a custom prompt evaluation flow in Amazon Bedrock Flows that applies the same clinical document inputs to different prompt variants. Use Amazon Comprehend Medical to analyze and score the factual accuracy of each version."}],
+    correct: ["B"],
+    why: "B is correct: prompt versions in a code repository with an automated test suite compare metrics on complex documents and keep history.",
+    badges: ["EXAMTOPICS", "DOMAIN 5"]
+  },
+  {
+    id: "et-30",
+    source: "examtopics",
+    page: 3,
+    chapters: ["04", "09", "10"],
+    domain: 1,
+    stem: "A company uses Amazon Bedrock to generate technical content for customers. The company has recently experienced a surge in hallucination outputs when the company's model generates summaries of long technical documents. The model outputs include inaccurate or fabricated details. The company's current solution uses a large foundation model (FM) with a basic one-shot prompt that includes the full document in a single input. The company needs a solution that will reduce hallucinations and meet factual accuracy goals. The solution must process more than 1,000 documents each hour and deliver summaries within 3 seconds for each document. Which combination of solutions will meet these requirements? (Choose two.)",
+    choices: [{id:"A", text:"Implement zero-shot chain-of-thought (CoT) instructions that require step-by-step reasoning with explicit fact verification before the model generates each summary."}, {id:"B", text:"Use Retrieval Augmented Generation (RAG) with an Amazon Bedrock knowledge base. Apply semantic chunking and tuned embeddings to ground summaries in source content."}, {id:"C", text:"Configure Amazon Bedrock guardrails to block any generated output that matches patterns that are associated with hallucinated content."}, {id:"D", text:"Increase the temperature parameter in Amazon Bedrock."}, {id:"E", text:"Prompt the Amazon Bedrock model to summarize each full document in one pass."}],
+    correct: ["A", "B"],
+    why: "A and B are required: zero-shot chain-of-thought fact checks plus RAG semantic chunking ground summaries in source content.",
+    badges: ["EXAMTOPICS", "DOMAIN 1"]
+  }
+]);
