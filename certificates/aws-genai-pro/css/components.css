@@ -1017,6 +1017,13 @@ h2.display {
 }
 
 /* Quiz */
+.quiz-page { min-width: 0; }
+.quiz-stem {
+  color: var(--fg);
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
 .quiz-meta {
   display: flex;
   justify-content: space-between;
@@ -1027,9 +1034,14 @@ h2.display {
   font-family: 'JetBrains Mono', monospace;
 }
 .choice {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   width: 100%;
+  min-height: 44px;
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1056,8 +1068,14 @@ h2.display {
 .choice .letter {
   font-family: 'JetBrains Mono', monospace;
   color: var(--teal);
-  margin-right: 8px;
   font-weight: 700;
+  flex-shrink: 0;
+  min-width: 1.25em;
+}
+.choice .letter::after { content: "."; }
+.choice-text {
+  min-width: 0;
+  flex: 1;
 }
 .choice.correct .letter { color: var(--green); }
 .choice.wrong .letter { color: var(--red); }
@@ -1078,7 +1096,7 @@ h2.display {
   border-color: rgba(248, 113, 113, 0.35);
   background: rgba(248, 113, 113, 0.08);
 }
-.feedback p { color: var(--muted); }
+.feedback p { color: var(--muted); overflow-wrap: anywhere; }
 
 .stats-grid {
   display: grid;
@@ -1170,6 +1188,11 @@ details.block summary {
   .detail-grid {
     grid-template-columns: 1fr;
   }
+  .quiz-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card { padding: 14px 16px; }
 }
 @media (max-width: 520px) {
   .domain-dash,
@@ -1189,4 +1212,10 @@ details.block summary {
     grid-template-columns: 1fr;
     gap: 3px;
   }
+  .btn { padding: 10px 12px; }
+  .choice { font-size: 14px; padding: 12px; }
+  .quiz-stem { font-size: 15px; }
+  .topbar-title { font-size: 14px; }
+  .hero h1 { font-size: clamp(26px, 8vw, 36px); }
+  .section-title h2 { font-size: 20px; }
 }

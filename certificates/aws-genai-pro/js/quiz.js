@@ -203,7 +203,7 @@ AIP.quiz = (function () {
     }
     if (q.subdomain) html += '<div class="quiz-meta" style="margin-top:8px;color:var(--muted);font-size:13px">' + AIP.escape(q.subdomain) + '</div>';
     html += '<div class="badge-row" style="margin-top:12px">' + AIP.renderBadges(badges) + '</div>';
-    html += '<div class="card"><p style="color:var(--fg);font-size:16px;line-height:1.55">' + AIP.escape(q.stem) + '</p></div>';
+    html += '<div class="card"><p class="quiz-stem">' + AIP.escape(q.stem) + '</p></div>';
     var wantSet = {};
     correctLetters(q).forEach(function (L) { wantSet[L] = true; });
     (q.choices || []).forEach(function (c) {
@@ -214,7 +214,7 @@ AIP.quiz = (function () {
         if (wantSet[letter]) cls += " correct";
         else if (session.selected[letter]) cls += " wrong";
       }
-      html += '<button type="button" class="' + cls + '" data-choice="' + AIP.escape(letter) + '"><span class="letter">' + AIP.escape(letter) + '.</span> ' + AIP.escape(c.text) + '</button>';
+      html += '<button type="button" class="' + cls + '" data-choice="' + AIP.escape(letter) + '"><span class="letter">' + AIP.escape(letter) + '</span><span class="choice-text">' + AIP.escape(c.text) + '</span></button>';
     });
     if (!session.revealed) {
       html += '<div class="chapter-actions"><button type="button" class="btn primary" data-quiz="submit">Check answer</button><button type="button" class="btn ghost" data-quiz="reset">Reset this attempt</button></div>';
@@ -247,7 +247,7 @@ AIP.quiz = (function () {
       if (session.filter !== "all") html += '<a class="btn ghost" href="#/chapter/' + AIP.escape(session.filter) + '">Back to chapter</a>';
       html += '<a class="btn ghost" href="#/bank">Question bank</a><a class="btn ghost" href="#/stats">View stats</a></div>';
     }
-    return html;
+    return '<div class="quiz-page">' + html + "</div>";
   }
 
   function renderStats() {

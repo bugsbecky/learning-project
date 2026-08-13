@@ -119,10 +119,35 @@ AIP.app = (function () {
     }
   }
 
-  function closeMobileNav() {
-    if (sidebar) sidebar.classList.remove("open");
+  function isMobileNav() {
+    return window.matchMedia("(max-width: 980px)").matches;
+  }
+
+  function setMobileNav(open) {
     var scrim = document.getElementById("scrim");
-    if (scrim) scrim.classList.remove("show");
+    var menuBtn = document.getElementById("menuBtn");
+    var closeBtn = document.getElementById("sidebarClose");
+    var mobile = isMobileNav();
+    if (sidebar) sidebar.classList.toggle("open", !!(open && mobile));
+    if (scrim) {
+      scrim.classList.toggle("show", !!(open && mobile));
+      scrim.setAttribute("aria-hidden", open && mobile ? "false" : "true");
+    }
+    if (menuBtn) {
+      menuBtn.setAttribute("aria-expanded", open && mobile ? "true" : "false");
+      menuBtn.setAttribute("aria-label", open && mobile ? "Close course menu" : "Open course menu");
+    }
+    document.body.classList.toggle("nav-open", !!(open && mobile));
+    if (open && mobile && closeBtn) closeBtn.focus();
+  }
+
+  function closeMobileNav() {
+    setMobileNav(false);
+  }
+
+  function toggleMobileNav() {
+    var open = sidebar && sidebar.classList.contains("open");
+    setMobileNav(!open);
   }
 
   function ensureQuiz(filter, options) {
@@ -238,16 +263,37 @@ AIP.app = (function () {
     titleEl = document.getElementById("topTitle");
     var menuBtn = document.getElementById("menuBtn");
     var scrim = document.getElementById("scrim");
-    if (menuBtn && sidebar) {
+    var closeBtn = document.getElementById("sidebarClose");
+    if (menuBtn) {
       menuBtn.addEventListener("click", function () {
-        sidebar.classList.add("open");
-        if (scrim) scrim.classList.add("show");
+        toggleMobileNav();
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        closeMobileNav();
+        if (menuBtn) menuBtn.focus();
       });
     }
     if (scrim) {
       scrim.addEventListener("click", function () {
         closeMobileNav();
+        if (menuBtn) menuBtn.focus();
       });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && sidebar && sidebar.classList.contains("open")) {
+        closeMobileNav();
+        if (menuBtn) menuBtn.focus();
+      }
+    });
+    if (window.matchMedia) {
+      var mq = window.matchMedia("(max-width: 980px)");
+      var onMq = function (e) {
+        if (e && e.matches === false) closeMobileNav();
+      };
+      if (mq.addEventListener) mq.addEventListener("change", onMq);
+      else if (mq.addListener) mq.addListener(onMq);
     }
     document.body.addEventListener("click", onClick);
     window.addEventListener("hashchange", draw);
