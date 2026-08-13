@@ -4,7 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="AIP-C01 exam prep: learn AWS Generative AI with one real company-chat story, short chapters, quizzes, and a mock exam. Works from file://.">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AIP-C01">
   <title>AIP-C01 · AWS Generative AI Developer Professional</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,7 +34,7 @@
     <aside class="sidebar" id="sidebar" aria-label="Course sidebar">
       <div class="sidebar-head">
         <a class="sidebar-brand" href="#/" aria-label="AIP-C01 Prep home">
-          <div class="logo-mark" aria-hidden="true">AI</div>
+          <img class="logo-mark" src="icons/icon.svg" width="36" height="36" alt="" aria-hidden="true">
           <div>
             <strong>AIP-C01 Prep</strong>
             <span>GenAI Developer Professional</span>
@@ -52,7 +62,9 @@
         <a href="#/stats">Question stats</a>
         <button type="button" data-act="reset-progress">Reset chapter progress</button>
         <button type="button" data-act="reset-quiz">Reset quiz stats</button>
-        <a href="../../index.html">Back to learning repo</a>
+        <button type="button" class="install-btn" id="installBtn" hidden>Install app</button>
+        <p class="install-ios" id="installIos" hidden>iPhone: Share → Add to Home Screen</p>
+        <a class="pwa-web-only" href="../../index.html">Back to learning repo</a>
       </footer>
     </aside>
 

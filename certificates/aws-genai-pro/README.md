@@ -1,6 +1,6 @@
 # AIP-C01 · AWS Generative AI Developer Professional
 
-Vanilla HTML/CSS/JS exam prep for **Amazon AWS Certified Generative AI Developer – Professional (AIP-C01)**. Open [`index.html`](index.html) in a browser (works from `file://`).
+Vanilla HTML/CSS/JS exam prep for **Amazon AWS Certified Generative AI Developer – Professional (AIP-C01)**. Open [`index.html`](index.html) in a browser (works from `file://`). Serve it over `http://` to install it as a **PWA** and study offline.
 
 This is not an A to Z catalog of AWS products. It is one employee named **Maya** using a **Company Knowledge Assistant**. She asks real questions. Each chapter adds one piece of that chat.
 
@@ -13,6 +13,24 @@ This is not an A to Z catalog of AWS products. It is one employee named **Maya**
 5. Right/wrong counts live in `localStorage` so missed items stay visible on **Question stats**.
 
 Reset chapter progress and quiz stats from the sidebar footer (separate actions).
+
+## Install as an app (PWA)
+
+Service workers do not run from `file://`. Serve this folder (or the repo root) over HTTP, open the site once so assets can cache, then install:
+
+```bash
+# from this folder
+python3 -m http.server 8080
+# then open http://127.0.0.1:8080/
+```
+
+Or from the repo root: `python3 -m http.server 8765` and open `/certificates/aws-genai-pro/index.html`.
+
+- **Chrome / Edge / Android:** sidebar **Install app**, or the browser install icon in the address bar.
+- **iPhone / iPad:** Share → **Add to Home Screen**.
+- Progress and quiz stats stay in `localStorage` on that device.
+
+The app shell, chapters, and question bank are precached. Google Fonts cache after the first online visit; offline still works with system fonts.
 
 ## Exam domains (dashboard on the home page)
 
@@ -29,6 +47,9 @@ Reset chapter progress and quiz stats from the sidebar footer (separate actions)
 ```
 certificates/aws-genai-pro/
 ├── index.html
+├── manifest.webmanifest # PWA install metadata
+├── sw.js                # offline cache (http/https only)
+├── icons/               # app / apple-touch / favicon
 ├── css/                 # tokens, base, layout, components
 ├── js/
 │   ├── ns.js            # AIP.registerChapter / registerQuestions

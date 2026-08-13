@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="AIP-C01 GenAI Professional">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd66e"/>
+      <stop offset="0.45" stop-color="#d6a22e"/>
+      <stop offset="1" stop-color="#a87616"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="#0f1115"/>
+  <g transform="translate(256 256)" filter="url(#glow)">
+    <polygon points="0,-226 196,-113 196,113 0,226 -196,113 -196,-113" fill="#a87616"/>
+    <polygon points="0,-214 186,-107 186,107 0,214 -186,107 -186,-107" fill="#ffd66e"/>
+    <polygon points="0,-196 170,-98 170,98 0,196 -170,98 -170,-98" fill="url(#gold)"/>
+    <polygon points="0,-176 152,-88 152,88 0,176 -152,88 -152,-88" fill="#0c1220"/>
+    <polygon points="0,-176 152,-88 152,88 0,176 -152,88 -152,-88" fill="none" stroke="#ffd66e" stroke-width="3"/>
+    <path d="M-74 -98 Q0 -58 74 -98" fill="none" stroke="#ff9900" stroke-width="16" stroke-linecap="round"/>
+    <path d="M-62 -96 Q0 -68 62 -96" fill="none" stroke="#ffb020" stroke-width="8" stroke-linecap="round"/>
+    <g fill="#ffce5c">
+      <polygon points="0,-92 10,-10 92,-14 10,2 0,64 -10,2 -92,-14 -10,-10"/>
+      <polygon points="-56,-4 -50,-22 -44,-4 -50,14" fill="#ffd66e"/>
+      <polygon points="62,-36 68,-50 74,-36 68,-22" fill="#ff9900"/>
+    </g>
+    <polygon points="-118,58 118,58 86,112 -86,112" fill="#d6a22e"/>
+    <polygon points="-110,64 110,64 82,106 -82,106" fill="#ffd66e"/>
+    <text x="0" y="96" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#0c1220" letter-spacing="2">PROFESSIONAL</text>
+  </g>
+</svg>

@@ -4,6 +4,7 @@
   "description": "Vanilla HTML/CSS/JS exam prep for **Amazon AWS Certified Generative AI Developer – Professional (AIP-C01)**. Open [`index.html`](index.html) in a browser (works from `file://`).",
   "main": "index.js",
   "scripts": {
+    "start": "python3 -m http.server 8080",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
