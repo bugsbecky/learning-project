@@ -1,5 +1,5 @@
 /* AIP-C01 PWA service worker. Register only from http(s) — not file://. */
-var CACHE = "aip-c01-v2";
+var CACHE = "aip-c01-v3";
 var FONT_CACHE = "aip-c01-fonts-v1";
 var PRECACHE = [
   "./index.html",

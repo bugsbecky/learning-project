@@ -10,7 +10,8 @@ This is not an A to Z catalog of AWS products. It is one employee named **Maya**
 2. Read the real example first. Then the short steps.
 3. Mark a chapter done when you can retell the example in your own words.
 4. Use **Quiz** on each chapter, then the **full mock exam**.
-5. Right/wrong counts live in `localStorage` so missed items stay visible on **Question stats**.
+5. Use **Full mock exam** to choose Smart practice or a randomized exam mode, then select 10, 20, 50, 80, or a custom question count. Filter by domain, source, or question status before starting.
+6. The active mock-exam set, current question, choices, skips, and right/wrong history live in `localStorage`, so reopening the PWA resumes the same session. Smart practice selects unseen items first; once all items have been seen, it prioritizes recent misses and weak items.
 
 Reset chapter progress and quiz stats from the sidebar footer (separate actions).
 
@@ -88,3 +89,5 @@ To add mock questions: `AIP.registerQuestions([{ id, chapters, domain, source, s
 - `aip-c01:v1:progress`: chapters marked done
 - `aip-c01:v1:quiz`: per-question correct/wrong counts
 - `aip-c01:v1:ui`: which sidebar groups are expanded
+- `aip-c01:v1:exam`: resumable mock-exam checkpoint
+- `aip-c01:v1:exam-prefs`: last-used mock-exam settings

@@ -22,7 +22,7 @@ AIP.app = (function () {
       var examMode = AIP.parseExamMode ? AIP.parseExamMode(location.hash) : { mode: "all" };
       var params = new URLSearchParams((location.hash.split("?")[1] || ""));
       var startId = params.get("id") || "";
-      return { name: "exam", examMode: examMode, startId: startId };
+      return { name: "exam", examMode: examMode, startId: startId, session: params.get("session") || "" };
     }
     if (parts[0] === "stats") return { name: "stats" };
     if (parts[0] === "bank") return { name: "bank" };
@@ -92,7 +92,7 @@ AIP.app = (function () {
   function setTitle() {
     if (!titleEl) return;
     if (route.name === "home") titleEl.innerHTML = "AIP-C01 · Learn with Maya<small>Company Knowledge Assistant</small>";
-    else if (route.name === "exam") titleEl.innerHTML = "Full mock exam<small>Sorted by domain · filter modes</small>";
+    else if (route.name === "exam") titleEl.innerHTML = "Full mock exam<small>Resume · filters · smart practice</small>";
     else if (route.name === "stats") titleEl.innerHTML = "Question stats<small>Right vs wrong counts</small>";
     else if (route.name === "bank") titleEl.innerHTML = "Question bank<small>CertSafari · grouped by domain</small>";
     else if (route.name === "quiz") {
@@ -166,8 +166,19 @@ AIP.app = (function () {
     else if (route.name === "stats") setView(AIP.quiz.renderStats());
     else if (route.name === "bank") setView(AIP.renderBank ? AIP.renderBank() : "<p>Question bank not loaded.</p>");
     else if (route.name === "exam") {
-      ensureQuiz("all", { examMode: route.examMode, startId: route.startId });
-      setView(AIP.quiz.render());
+      if (route.startId) {
+        AIP.quiz.start("all", { examMode: { mode: "focus", id: route.startId, count: 1, strategy: "exam" }, startId: route.startId });
+        location.hash = "#/exam?session=active";
+        return;
+      }
+      if (route.session === "active") {
+        var currentQuiz = AIP.quiz.current();
+        var active = currentQuiz && currentQuiz.filter === "all" ? currentQuiz : AIP.quiz.restoreExam();
+        if (active) setView(AIP.quiz.render());
+        else setView(AIP.renderExamSetup ? AIP.renderExamSetup() : "<p>Mock exam setup not loaded.</p>");
+      } else {
+        setView(AIP.renderExamSetup ? AIP.renderExamSetup() : "<p>Mock exam setup not loaded.</p>");
+      }
     } else if (route.name === "quiz") {
       if (!AIP.findChapterMeta(route.id)) {
         setView('<div class="card"><h3>Chapter not found</h3><p>Quizzes exist for chapters 00–27.</p><a class="btn" href="#/">Home</a></div>');
@@ -236,6 +247,42 @@ AIP.app = (function () {
       }
       return;
     }
+    var examAction = e.target.closest("[data-exam]");
+    if (examAction) {
+      var examAct = examAction.getAttribute("data-exam");
+      if (examAct === "abandon") {
+        if (confirm("End this saved exam session? Your lifetime right/wrong history will stay.")) {
+          AIP.quiz.abandonExam();
+          if (location.hash !== "#/exam") location.hash = "#/exam";
+          else draw();
+        }
+        return;
+      }
+      if (examAct === "start") {
+        var fields = view ? view.querySelectorAll("[data-exam-field]") : [];
+        var spec = { mode: "all" };
+        Array.prototype.forEach.call(fields, function (field) {
+          var name = field.getAttribute("data-exam-field");
+          var value = field.value;
+          if (name === "count") return;
+          if (value && value !== "all") spec[name] = name === "domain" ? Number(value) : value;
+        });
+        var countSelect = view && view.querySelector('[data-exam-field="count"]');
+        var customInput = view && view.querySelector("[data-exam-custom]");
+        var rawCount = countSelect && countSelect.value === "custom" ? customInput && customInput.value : countSelect && countSelect.value;
+        var max = (AIP.questions || []).length;
+        var count = Math.floor(Number(rawCount));
+        if (!count || count < 1) {
+          if (customInput) customInput.focus();
+          return;
+        }
+        spec.count = Math.min(count, max);
+        AIP.storage.saveExamPrefs(spec);
+        AIP.quiz.start("all", { examMode: spec });
+        location.hash = "#/exam?session=active";
+        return;
+      }
+    }
     var choice = e.target.closest("[data-choice]");
     if (choice) {
       AIP.quiz.toggleChoice(choice.getAttribute("data-choice"));
@@ -251,6 +298,7 @@ AIP.app = (function () {
         AIP.quiz.submit();
       }
       if (act === "next") AIP.quiz.next();
+      if (act === "skip") AIP.quiz.skip();
       if (act === "reset") AIP.quiz.resetAttempt();
       setView(AIP.quiz.render(), act === "submit");
     }

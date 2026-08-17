@@ -104,6 +104,33 @@ AIP.storage = (function () {
 
   function resetQuizStats() {
     write(AIP.STORAGE_KEYS.quiz, { questions: {} });
+    clearExamSession();
+  }
+
+  function examSession() {
+    var saved = read(AIP.STORAGE_KEYS.exam, null);
+    if (!saved || !Array.isArray(saved.itemIds) || !saved.itemIds.length) return null;
+    return saved;
+  }
+
+  function saveExamSession(session) {
+    if (!session || !Array.isArray(session.itemIds) || !session.itemIds.length) return;
+    write(AIP.STORAGE_KEYS.exam, session);
+  }
+
+  function clearExamSession() {
+    try {
+      localStorage.removeItem(AIP.STORAGE_KEYS.exam);
+    } catch (e) { /* private mode */ }
+  }
+
+  function examPrefs() {
+    var prefs = read(AIP.STORAGE_KEYS.examPrefs, {});
+    return prefs && typeof prefs === "object" ? prefs : {};
+  }
+
+  function saveExamPrefs(next) {
+    write(AIP.STORAGE_KEYS.examPrefs, next || {});
   }
 
   function saveUi(next) {
@@ -136,6 +163,11 @@ AIP.storage = (function () {
     recordAttempt: recordAttempt,
     questionStats: questionStats,
     resetQuizStats: resetQuizStats,
+    examSession: examSession,
+    saveExamSession: saveExamSession,
+    clearExamSession: clearExamSession,
+    examPrefs: examPrefs,
+    saveExamPrefs: saveExamPrefs,
     saveUi: saveUi,
     completedCount: completedCount
   };

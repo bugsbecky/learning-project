@@ -41,7 +41,9 @@ AIP.APP = {
 AIP.STORAGE_KEYS = {
   progress: "aip-c01:v1:progress",
   quiz: "aip-c01:v1:quiz",
-  ui: "aip-c01:v1:ui"
+  ui: "aip-c01:v1:ui",
+  exam: "aip-c01:v1:exam",
+  examPrefs: "aip-c01:v1:exam-prefs"
 };
 
 AIP.PROGRESS_CELLS = 14;

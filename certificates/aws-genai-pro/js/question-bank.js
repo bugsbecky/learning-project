@@ -37,7 +37,52 @@ window.AIP = window.AIP || {};
     return out;
   }
 
-  function matchesFilter(q, filter) {
+  function questionState(q, stat) {
+    stat = stat || AIP.storage.questionStats(q.id);
+    var correct = Number(stat.correct) || 0;
+    var wrong = Number(stat.wrong) || 0;
+    var attempts = correct + wrong;
+    if (!attempts) return "unseen";
+    if (wrong > correct || stat.last === "wrong") return "wrong";
+    return "correct";
+  }
+
+  function priorityQuestions(questions) {
+    var stats = AIP.storage.quiz().questions;
+    return (questions || []).map(function (q) {
+      var stat = stats[q.id] || {};
+      var correct = Number(stat.correct) || 0;
+      var wrong = Number(stat.wrong) || 0;
+      var attempts = correct + wrong;
+      var lastAttempt = (stat.attempts || []).length ? stat.attempts[stat.attempts.length - 1] : null;
+      var lastAt = lastAttempt && Number(lastAttempt.at) || 0;
+      var bucket;
+      // New questions always win. Once everything has been seen, missed items
+      // come first, with recent misses surfaced again before weak older items.
+      if (!attempts) bucket = 0;
+      else if (stat.last === "wrong") bucket = 1;
+      else if (wrong > correct) bucket = 2;
+      else if (wrong > 0) bucket = 3;
+      else bucket = 4;
+      return {
+        q: q,
+        bucket: bucket,
+        wrong: wrong,
+        accuracy: attempts ? correct / attempts : 0,
+        lastAt: lastAt,
+        tie: Math.random()
+      };
+    }).sort(function (a, b) {
+      if (a.bucket !== b.bucket) return a.bucket - b.bucket;
+      if (a.bucket === 0) return a.tie - b.tie;
+      if (a.bucket === 1) return b.lastAt - a.lastAt || b.wrong - a.wrong || a.tie - b.tie;
+      if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
+      if (a.wrong !== b.wrong) return b.wrong - a.wrong;
+      return a.lastAt - b.lastAt || a.tie - b.tie;
+    }).map(function (item) { return item.q; });
+  }
+
+  function matchesFilter(q, filter, stats) {
     if (!filter || filter === "all") return true;
     if (typeof filter === "string") {
       if (filter === "all") return true;
@@ -47,10 +92,12 @@ window.AIP = window.AIP || {};
     if (filter.domain != null && questionDomain(q) !== Number(filter.domain)) return false;
     if (filter.subdomain && String(q.subdomain || "") !== String(filter.subdomain)) return false;
     if (filter.id && String(q.id || "") !== String(filter.id)) return false;
+    if (filter.status && filter.status !== "all" && questionState(q, stats && stats[q.id]) !== filter.status) return false;
     return true;
   }
 
   AIP.questionDomain = questionDomain;
+  AIP.questionState = questionState;
 
   AIP.sortQuestions = function (questions) {
     return (questions || []).slice().sort(compareQuestions);
@@ -63,8 +110,9 @@ window.AIP = window.AIP || {};
   };
 
   AIP.filterQuestions = function (filter) {
+    var stats = filter && typeof filter === "object" && filter.status ? AIP.storage.quiz().questions : null;
     return AIP.sortQuestions((AIP.questions || []).filter(function (q) {
-      return matchesFilter(q, filter);
+      return matchesFilter(q, filter, stats);
     }));
   };
 
@@ -129,20 +177,30 @@ window.AIP = window.AIP || {};
     var mode = params.get("mode") || "all";
     var domain = params.get("domain");
     var source = params.get("source");
+    var status = params.get("status");
+    var strategy = params.get("strategy");
+    var count = Number(params.get("count"));
     var out = { mode: mode };
     if (domain != null && domain !== "") out.domain = Number(domain);
     if (source) out.source = source;
+    if (status) out.status = status;
+    if (strategy) out.strategy = strategy;
+    if (count > 0) out.count = count;
     return out;
   };
 
   AIP.questionsForExam = function (modeSpec) {
     var spec = modeSpec || { mode: "all" };
     var pool;
-    if (spec.mode === "certsafari") pool = AIP.questionsBySource("certsafari");
+    if (spec.id) pool = AIP.filterQuestions({ id: spec.id });
+    else if (spec.mode === "certsafari") pool = AIP.questionsBySource("certsafari");
     else if (spec.mode === "random65") pool = shuffle(AIP.sortQuestions(AIP.questions || [])).slice(0, 65);
-    else if (spec.domain != null) pool = AIP.filterQuestions({ domain: spec.domain });
-    else if (spec.source) pool = AIP.filterQuestions({ source: spec.source });
+    else if (spec.domain != null || spec.source || spec.status) pool = AIP.filterQuestions({ domain: spec.domain, source: spec.source, status: spec.status });
     else pool = AIP.sortQuestions(AIP.questions || []);
+    if (spec.strategy === "adaptive") pool = priorityQuestions(pool);
+    else if (spec.mode !== "random65" && !spec.id) pool = shuffle(pool);
+    var count = Number(spec.count);
+    if (count > 0 && !spec.id) pool = pool.slice(0, Math.min(Math.floor(count), pool.length));
     return pool;
   };
 
@@ -205,6 +263,38 @@ window.AIP = window.AIP || {};
       html += '</details>';
     });
     html += '</div>';
+    return html;
+  };
+
+  AIP.renderExamSetup = function () {
+    var all = AIP.questions || [];
+    var prefs = AIP.storage.examPrefs();
+    var stats = AIP.storage.quiz().questions;
+    var counts = { unseen: 0, wrong: 0, correct: 0 };
+    all.forEach(function (q) { counts[questionState(q, stats[q.id])] += 1; });
+    var selectedCount = String(prefs.count || 20);
+    var saved = AIP.storage.examSession();
+    var html = '<div class="hero"><h1>Mock exam</h1><p class="lede">Choose an exam-style random set or smart practice. Your active set, answers, skips, and question history are saved on this device, so you can close the PWA and resume exactly where you stopped.</p></div>';
+    html += '<div class="stats-grid"><div class="stat"><div class="n">' + counts.unseen + '</div><div class="l">Not answered</div></div>';
+    html += '<div class="stat"><div class="n">' + counts.wrong + '</div><div class="l">Need review</div></div>';
+    html += '<div class="stat"><div class="n">' + counts.correct + '</div><div class="l">Currently correct</div></div>';
+    html += '<div class="stat"><div class="n">' + all.length + '</div><div class="l">Eligible bank</div></div></div>';
+    if (saved) {
+      var answered = (saved.results || []).filter(function (x) { return typeof x === "boolean"; }).length;
+      html += '<div class="card exam-resume"><h3>Continue saved session</h3><p>' + answered + ' answered · question ' + ((Number(saved.index) || 0) + 1) + ' of ' + saved.itemIds.length + '. This session will still be here after reopening the app.</p><div class="chapter-actions"><a class="btn primary" href="#/exam?session=active">Resume exam</a><button type="button" class="btn ghost" data-exam="abandon">Start a different set</button></div></div>';
+    }
+    html += '<section class="card exam-setup"><h2>Build a question set</h2><div class="exam-controls">';
+    html += '<label class="exam-control"><span>Study mode</span><select data-exam-field="strategy"><option value="adaptive"' + (prefs.strategy !== "exam" ? " selected" : "") + '>Smart practice (recommended)</option><option value="exam"' + (prefs.strategy === "exam" ? " selected" : "") + '>Exam mode (random)</option></select><small>Smart practice uses new questions first, then missed questions.</small></label>';
+    var standardCounts = ["10", "20", "50", "80"];
+    var customCount = standardCounts.indexOf(selectedCount) === -1;
+    html += '<label class="exam-control"><span>Question count</span><select data-exam-field="count"><option value="10"' + (selectedCount === "10" ? " selected" : "") + '>10</option><option value="20"' + (selectedCount === "20" ? " selected" : "") + '>20</option><option value="50"' + (selectedCount === "50" ? " selected" : "") + '>50</option><option value="80"' + (selectedCount === "80" ? " selected" : "") + '>80</option><option value="custom"' + (customCount ? " selected" : "") + '>Custom</option></select><input type="number" min="1" max="' + all.length + '" inputmode="numeric" data-exam-custom value="' + (customCount ? AIP.escape(selectedCount) : '') + '" placeholder="Custom count, 1–' + all.length + '"><small>Choose 10, 20, 50, 80, or enter your own count.</small></label>';
+    html += '<label class="exam-control"><span>Question status</span><select data-exam-field="status"><option value="all">Any status</option><option value="unseen"' + (prefs.status === "unseen" ? " selected" : "") + '>Not answered yet</option><option value="wrong"' + (prefs.status === "wrong" ? " selected" : "") + '>Needs review / wrong</option><option value="correct"' + (prefs.status === "correct" ? " selected" : "") + '>Currently correct</option></select><small>Use this to focus a set before you start.</small></label>';
+    html += '<label class="exam-control"><span>Source</span><select data-exam-field="source"><option value="all">All sources</option><option value="certsafari"' + (prefs.source === "certsafari" ? " selected" : "") + '>CertSafari</option><option value="practice"' + (prefs.source === "practice" ? " selected" : "") + '>Practice questions</option><option value="examtopics"' + (prefs.source === "examtopics" ? " selected" : "") + '>ExamTopics</option></select></label>';
+    html += '<label class="exam-control"><span>Domain</span><select data-exam-field="domain"><option value="all">All domains</option>';
+    (AIP.DOMAINS || []).forEach(function (d) {
+      html += '<option value="' + d.id + '"' + (String(prefs.domain) === String(d.id) ? " selected" : "") + '>Domain ' + d.id + ' · ' + AIP.escape(d.short) + '</option>';
+    });
+    html += '</select></label></div><div class="exam-algorithm"><strong>How Smart practice chooses:</strong> unanswered questions are always selected before answered ones. Once the pool has been seen, recent wrong answers are shown first, then lower-accuracy and least-recently-seen questions. A question appears at most once in a set.</div><div class="chapter-actions"><button type="button" class="btn primary" data-exam="start">Start new set</button><a class="btn ghost" href="#/stats">Review question stats</a><a class="btn ghost" href="#/bank">Browse question bank</a></div></section>';
     return html;
   };
 })();
