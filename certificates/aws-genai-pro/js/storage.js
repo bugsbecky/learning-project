@@ -104,7 +104,7 @@ AIP.storage = (function () {
 
   function resetQuizStats() {
     write(AIP.STORAGE_KEYS.quiz, { questions: {} });
-    clearExamSession();
+    clearExamRuns();
   }
 
   function examSession() {
@@ -122,6 +122,54 @@ AIP.storage = (function () {
     try {
       localStorage.removeItem(AIP.STORAGE_KEYS.exam);
     } catch (e) { /* private mode */ }
+  }
+
+  function examRuns() {
+    var runs = read(AIP.STORAGE_KEYS.examRuns, null);
+    if (Array.isArray(runs)) {
+      return runs.filter(function (run) {
+        return run && typeof run === "object" && run.id && Array.isArray(run.itemIds) && run.itemIds.length;
+      }).sort(function (a, b) { return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0); }).slice(0, 2);
+    }
+    // One-time compatibility upgrade for the previous single saved session.
+    var legacy = examSession();
+    if (!legacy) return [];
+    legacy.id = "legacy-" + (legacy.startedAt || Date.now());
+    legacy.createdAt = legacy.startedAt || Date.now();
+    legacy.updatedAt = legacy.updatedAt || legacy.createdAt;
+    write(AIP.STORAGE_KEYS.examRuns, [legacy]);
+    clearExamSession();
+    return [legacy];
+  }
+
+  function saveExamRun(run) {
+    if (!run || !run.id || !Array.isArray(run.itemIds) || !run.itemIds.length) return [];
+    var runs = examRuns().filter(function (saved) { return saved.id !== run.id; });
+    runs.push(run);
+    runs.sort(function (a, b) { return (Number(b.updatedAt) || 0) - (Number(a.updatedAt) || 0); });
+    runs = runs.slice(0, 2);
+    write(AIP.STORAGE_KEYS.examRuns, runs);
+    return runs;
+  }
+
+  function examRun(id) {
+    var runs = examRuns();
+    for (var i = 0; i < runs.length; i++) {
+      if (String(runs[i].id) === String(id)) return runs[i];
+    }
+    return null;
+  }
+
+  function removeExamRun(id) {
+    var runs = examRuns().filter(function (run) { return String(run.id) !== String(id); });
+    write(AIP.STORAGE_KEYS.examRuns, runs);
+  }
+
+  function clearExamRuns() {
+    try {
+      localStorage.removeItem(AIP.STORAGE_KEYS.examRuns);
+    } catch (e) { /* private mode */ }
+    clearExamSession();
   }
 
   function examPrefs() {
@@ -166,6 +214,11 @@ AIP.storage = (function () {
     examSession: examSession,
     saveExamSession: saveExamSession,
     clearExamSession: clearExamSession,
+    examRuns: examRuns,
+    saveExamRun: saveExamRun,
+    examRun: examRun,
+    removeExamRun: removeExamRun,
+    clearExamRuns: clearExamRuns,
     examPrefs: examPrefs,
     saveExamPrefs: saveExamPrefs,
     saveUi: saveUi,

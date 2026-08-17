@@ -22,10 +22,11 @@ AIP.app = (function () {
       var examMode = AIP.parseExamMode ? AIP.parseExamMode(location.hash) : { mode: "all" };
       var params = new URLSearchParams((location.hash.split("?")[1] || ""));
       var startId = params.get("id") || "";
-      return { name: "exam", examMode: examMode, startId: startId, session: params.get("session") || "" };
+      return { name: "exam", examMode: examMode, startId: startId, runId: params.get("run") || "", session: params.get("session") || "" };
     }
     if (parts[0] === "stats") return { name: "stats" };
-    if (parts[0] === "bank") return { name: "bank" };
+    if (parts[0] === "bank") return { name: "bank", filter: AIP.parseExamMode ? AIP.parseExamMode(location.hash) : {} };
+    if (parts[0] === "practice") return { name: "practice", filter: AIP.parseExamMode ? AIP.parseExamMode(location.hash) : {} };
     return { name: "home" };
   }
 
@@ -94,7 +95,8 @@ AIP.app = (function () {
     if (route.name === "home") titleEl.innerHTML = "AIP-C01 · Learn with Maya<small>Company Knowledge Assistant</small>";
     else if (route.name === "exam") titleEl.innerHTML = "Full mock exam<small>Resume · filters · smart practice</small>";
     else if (route.name === "stats") titleEl.innerHTML = "Question stats<small>Right vs wrong counts</small>";
-    else if (route.name === "bank") titleEl.innerHTML = "Question bank<small>CertSafari · grouped by domain</small>";
+    else if (route.name === "bank") titleEl.innerHTML = "Question list<small>Filter by domain · service · history</small>";
+    else if (route.name === "practice") titleEl.innerHTML = "Question list practice<small>Filtered questions · no fixed exam size</small>";
     else if (route.name === "quiz") {
       var c = AIP.findChapterMeta(route.id);
       titleEl.innerHTML = (c ? AIP.escape(c.id) + ". " + AIP.escape(c.title) : "Quiz") + "<small>Chapter quiz</small>";
@@ -152,7 +154,7 @@ AIP.app = (function () {
 
   function ensureQuiz(filter, options) {
     options = options || {};
-    var key = filter === "all" ? AIP.quiz.sessionKey("all", options) : String(filter);
+    var key = filter === "all" ? AIP.quiz.sessionKey("all", options) : AIP.quiz.sessionKey(filter, options);
     var cur = AIP.quiz.current();
     if (!cur || cur.filterKey !== key) AIP.quiz.start(filter, options);
   }
@@ -164,20 +166,29 @@ AIP.app = (function () {
     updateProgress();
     if (route.name === "home") setView(AIP.renderHome());
     else if (route.name === "stats") setView(AIP.quiz.renderStats());
-    else if (route.name === "bank") setView(AIP.renderBank ? AIP.renderBank() : "<p>Question bank not loaded.</p>");
+    else if (route.name === "bank") setView(AIP.renderBank ? AIP.renderBank(route.filter) : "<p>Question list not loaded.</p>");
+    else if (route.name === "practice") {
+      ensureQuiz(route.filter || {});
+      setView(AIP.quiz.render());
+    }
     else if (route.name === "exam") {
       if (route.startId) {
-        AIP.quiz.start("all", { examMode: { mode: "focus", id: route.startId, count: 1, strategy: "exam" }, startId: route.startId });
-        location.hash = "#/exam?session=active";
+        AIP.quiz.start("all", { examMode: { mode: "focus", id: route.startId, count: 1, strategy: "exam" }, startId: route.startId, persistExam: false });
+        setView(AIP.quiz.render());
         return;
       }
-      if (route.session === "active") {
+      var requestedRunId = route.runId;
+      if (!requestedRunId && route.session === "active") {
+        var latestRun = AIP.storage.examRuns()[0];
+        requestedRunId = latestRun ? latestRun.id : "";
+      }
+      if (requestedRunId) {
         var currentQuiz = AIP.quiz.current();
-        var active = currentQuiz && currentQuiz.filter === "all" ? currentQuiz : AIP.quiz.restoreExam();
+        var active = currentQuiz && currentQuiz.runId === requestedRunId ? currentQuiz : AIP.quiz.restoreExam(requestedRunId);
         if (active) setView(AIP.quiz.render());
-        else setView(AIP.renderExamSetup ? AIP.renderExamSetup() : "<p>Mock exam setup not loaded.</p>");
+        else setView(AIP.renderExamSetup ? AIP.renderExamSetup(route.examMode) : "<p>Mock exam setup not loaded.</p>");
       } else {
-        setView(AIP.renderExamSetup ? AIP.renderExamSetup() : "<p>Mock exam setup not loaded.</p>");
+        setView(AIP.renderExamSetup ? AIP.renderExamSetup(route.examMode) : "<p>Mock exam setup not loaded.</p>");
       }
     } else if (route.name === "quiz") {
       if (!AIP.findChapterMeta(route.id)) {
@@ -251,10 +262,20 @@ AIP.app = (function () {
     if (examAction) {
       var examAct = examAction.getAttribute("data-exam");
       if (examAct === "abandon") {
-        if (confirm("End this saved exam session? Your lifetime right/wrong history will stay.")) {
+        if (confirm("Remove this mock-exam run? Your lifetime right/wrong history will stay.")) {
           AIP.quiz.abandonExam();
           if (location.hash !== "#/exam") location.hash = "#/exam";
           else draw();
+        }
+        return;
+      }
+      if (examAct === "delete-run") {
+        var runId = examAction.getAttribute("data-run");
+        if (runId && confirm("Remove this mock-exam run? Your lifetime right/wrong history will stay.")) {
+          var activeRun = AIP.quiz.current();
+          if (activeRun && activeRun.runId === runId) AIP.quiz.abandonExam();
+          else AIP.storage.removeExamRun(runId);
+          draw();
         }
         return;
       }
@@ -279,9 +300,20 @@ AIP.app = (function () {
         spec.count = Math.min(count, max);
         AIP.storage.saveExamPrefs(spec);
         AIP.quiz.start("all", { examMode: spec });
-        location.hash = "#/exam?session=active";
+        location.hash = "#/exam?run=" + encodeURIComponent(AIP.quiz.current().runId);
         return;
       }
+    }
+    var bankAction = e.target.closest("[data-bank]");
+    if (bankAction && bankAction.getAttribute("data-bank") === "apply") {
+      var bankFields = view ? view.querySelectorAll("[data-bank-field]") : [];
+      var bankFilter = {};
+      Array.prototype.forEach.call(bankFields, function (field) {
+        var name = field.getAttribute("data-bank-field");
+        if (field.value && field.value !== "all") bankFilter[name] = name === "domain" ? Number(field.value) : field.value;
+      });
+      location.hash = "#/bank" + (AIP.filterQuery ? AIP.filterQuery(bankFilter) : "");
+      return;
     }
     var choice = e.target.closest("[data-choice]");
     if (choice) {

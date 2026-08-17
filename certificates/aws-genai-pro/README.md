@@ -10,8 +10,9 @@ This is not an A to Z catalog of AWS products. It is one employee named **Maya**
 2. Read the real example first. Then the short steps.
 3. Mark a chapter done when you can retell the example in your own words.
 4. Use **Quiz** on each chapter, then the **full mock exam**.
-5. Use **Full mock exam** to choose Smart practice or a randomized exam mode, then select 10, 20, 50, 80, or a custom question count. Filter by domain, source, or question status before starting.
-6. The active mock-exam set, current question, choices, skips, and right/wrong history live in `localStorage`, so reopening the PWA resumes the same session. Smart practice selects unseen items first; once all items have been seen, it prioritizes recent misses and weak items.
+5. Use **Question list** for an unlimited filtered practice stream. Filter by domain, AWS service, source, or question status, then answer the matching list in order.
+6. Use **Full mock exam** to choose Smart practice or a randomized exam mode, then select 10, 20, 50, 80, or a custom question count. The same domain, service, source, and status filters are available before starting.
+7. Each mock exam is a separate saved run (up to two runs per browser). A run keeps its own set, position, choices, skips, and results; all-time right/wrong history is shared across every run. Smart practice selects unseen items first; once all items have been seen, it prioritizes recent misses and weak items.
 
 Reset chapter progress and quiz stats from the sidebar footer (separate actions).
 
@@ -89,5 +90,6 @@ To add mock questions: `AIP.registerQuestions([{ id, chapters, domain, source, s
 - `aip-c01:v1:progress`: chapters marked done
 - `aip-c01:v1:quiz`: per-question correct/wrong counts
 - `aip-c01:v1:ui`: which sidebar groups are expanded
-- `aip-c01:v1:exam`: resumable mock-exam checkpoint
+- `aip-c01:v1:exam`: legacy single-run checkpoint (migrated automatically)
+- `aip-c01:v1:exam-runs`: up to two resumable mock-exam runs
 - `aip-c01:v1:exam-prefs`: last-used mock-exam settings

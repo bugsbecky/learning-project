@@ -43,6 +43,7 @@ AIP.STORAGE_KEYS = {
   quiz: "aip-c01:v1:quiz",
   ui: "aip-c01:v1:ui",
   exam: "aip-c01:v1:exam",
+  examRuns: "aip-c01:v1:exam-runs",
   examPrefs: "aip-c01:v1:exam-prefs"
 };
 

@@ -65,10 +65,15 @@ AIP.quiz = (function () {
     });
   }
 
+  function newRunId() {
+    return "run-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
   function persistExam() {
-    if (!session || session.filter !== "all") return;
-    AIP.storage.saveExamSession({
-      version: 1,
+    if (!session || !session.runId) return;
+    AIP.storage.saveExamRun({
+      version: 2,
+      id: session.runId,
       filter: "all",
       filterKey: session.filterKey,
       examMode: session.examMode || {},
@@ -79,22 +84,24 @@ AIP.quiz = (function () {
       results: session.results || [],
       skipped: session.skipped || {},
       startedAt: session.startedAt || Date.now(),
+      createdAt: session.createdAt || session.startedAt || Date.now(),
       updatedAt: Date.now()
     });
   }
 
-  function restoreExam() {
-    var saved = AIP.storage.examSession();
+  function restoreExam(runId) {
+    var saved = runId ? AIP.storage.examRun(runId) : (AIP.storage.examRuns()[0] || null);
     if (!saved) return null;
     var byId = {};
     (AIP.questions || []).forEach(function (q) { byId[q.id] = q; });
     var items = saved.itemIds.map(function (id) { return byId[id]; }).filter(Boolean);
     if (!items.length) {
-      AIP.storage.clearExamSession();
+      AIP.storage.removeExamRun(saved.id);
       return null;
     }
     session = {
       filter: "all",
+      runId: saved.id,
       filterKey: saved.filterKey || "saved-exam",
       examMode: saved.examMode || {},
       items: items,
@@ -103,7 +110,8 @@ AIP.quiz = (function () {
       selected: saved.selected && typeof saved.selected === "object" ? saved.selected : {},
       results: Array.isArray(saved.results) ? saved.results : [],
       skipped: saved.skipped && typeof saved.skipped === "object" ? saved.skipped : {},
-      startedAt: saved.startedAt || Date.now()
+      startedAt: saved.startedAt || Date.now(),
+      createdAt: saved.createdAt || saved.startedAt || Date.now()
     };
     return session;
   }
@@ -128,7 +136,7 @@ AIP.quiz = (function () {
       if (idx >= 0) startIndex = idx;
     }
     session = {
-      filter: filter === "all" ? "all" : AIP.padChapterId(filter),
+      filter: filter === "all" ? "all" : (typeof filter === "object" ? filter : AIP.padChapterId(filter)),
       filterKey: sessionKey(filter, options),
       examMode: options.examMode || null,
       items: items,
@@ -137,7 +145,9 @@ AIP.quiz = (function () {
       selected: {},
       results: [],
       skipped: {},
-      startedAt: Date.now()
+      startedAt: Date.now(),
+      createdAt: Date.now(),
+      runId: filter === "all" && options.persistExam !== false ? (options.runId || newRunId()) : null
     };
     persistExam();
     return session;
@@ -232,8 +242,8 @@ AIP.quiz = (function () {
   }
 
   function abandonExam() {
+    if (session && session.runId) AIP.storage.removeExamRun(session.runId);
     session = null;
-    AIP.storage.clearExamSession();
   }
 
   function examModeLabel(mode) {
@@ -257,7 +267,7 @@ AIP.quiz = (function () {
   function render() {
     if (!session) return "<p>No quiz loaded.</p>";
     if (!session.items.length) {
-      var back = session.filter !== "all"
+      var back = typeof session.filter === "string" && session.filter !== "all"
         ? '<a class="btn" href="#/chapter/' + AIP.escape(session.filter) + '">Back to chapter</a>'
         : "";
       return '<div class="card"><h3>No questions in this set</h3><p>Try the full mock exam or browse the question bank.</p><div class="chapter-actions"><a class="btn" href="#/exam">Full mock exam</a><a class="btn" href="#/bank">Question bank</a>' + back + '</div></div>';
@@ -271,9 +281,11 @@ AIP.quiz = (function () {
       html += '<div class="card" style="margin-bottom:12px;padding:12px 16px"><div style="font-size:13px;color:var(--muted)">' + AIP.escape(examModeLabel(session.examMode)) + '</div>';
       html += '<div class="chapter-actions" style="margin-top:8px"><a class="btn ghost" href="#/exam">Exam settings</a>';
       html += '<a class="btn ghost" href="#/bank">Browse bank</a></div></div>';
+    } else if (typeof session.filter === "object") {
+      html += '<div class="card" style="margin-bottom:12px;padding:12px 16px"><div style="font-size:13px;color:var(--muted)">Filtered question list · ' + session.items.length + ' questions</div><div class="chapter-actions" style="margin-top:8px"><a class="btn ghost" href="#/bank">Change filters</a><a class="btn ghost" href="#/exam' + (AIP.filterQuery ? AIP.filterQuery(session.filter) : "") + '">Use for mock setup</a></div></div>';
     }
     html += '<div class="quiz-meta"><div>Question ' + (session.index + 1) + " / " + session.items.length + (multi ? " · choose all that apply" : "") + '</div>';
-    html += '<div>Lifetime: ' + stats.correct + ' right · ' + stats.wrong + ' wrong' + (!stats.attempts.length ? ' · new' : '') + '</div></div>';
+    html += '<div class="question-history">Lifetime: <span class="answer-count correct">' + stats.correct + ' right</span> · <span class="answer-count wrong">' + stats.wrong + ' wrong</span>' + (!stats.attempts.length ? ' · <span class="answer-count new">new</span>' : '') + '</div></div>';
     var badges = (q.badges || []).slice();
     if (!badges.length) {
       if (q.source === "examtopics") badges.push("EXAMTOPICS");
@@ -324,9 +336,16 @@ AIP.quiz = (function () {
       }
       html += '<button type="button" class="btn" data-quiz="reset">Try this set again</button>';
       if (more) html += '<button type="button" class="btn ghost" data-quiz="skip">Skip for now</button>';
-      if (session.filter !== "all") html += '<a class="btn ghost" href="#/chapter/' + AIP.escape(session.filter) + '">Back to chapter</a>';
+      if (!more && typeof session.filter === "string" && session.filter !== "all") {
+        var chapterIndex = (AIP.CHAPTERS || []).findIndex(function (chapter) { return chapter.id === session.filter; });
+        if (chapterIndex >= 0 && chapterIndex < AIP.CHAPTERS.length - 1) {
+          var nextChapter = AIP.CHAPTERS[chapterIndex + 1];
+          html += '<a class="btn primary" href="#/chapter/' + AIP.escape(nextChapter.id) + '">Continue to ' + AIP.escape(nextChapter.id + '. ' + nextChapter.title) + '</a>';
+        }
+      }
+      if (typeof session.filter === "string" && session.filter !== "all") html += '<a class="btn ghost" href="#/chapter/' + AIP.escape(session.filter) + '">Back to chapter</a>';
       html += '<a class="btn ghost" href="#/bank">Question bank</a><a class="btn ghost" href="#/stats">View stats</a>';
-      if (session.filter === "all") html += '<button type="button" class="btn ghost" data-exam="abandon">End saved session</button>';
+      if (session.runId) html += '<button type="button" class="btn ghost" data-exam="abandon">Remove this run</button>';
       html += '</div>';
     }
     return '<div class="quiz-page">' + html + "</div>";
@@ -336,6 +355,7 @@ AIP.quiz = (function () {
     var allStats = AIP.storage.quiz().questions;
     var sorted = AIP.sortQuestions ? AIP.sortQuestions(AIP.questions || []) : (AIP.questions || []).slice();
     var summary = AIP.bankSummary ? AIP.bankSummary() : { total: sorted.length, certsafari: 0, practice: 0 };
+    var performance = AIP.questionPerformance ? AIP.questionPerformance(sorted) : { correct: 0, wrong: 0, accuracy: 0, answers: 0 };
     var rows = sorted.map(function (q) {
       var s = allStats[q.id] || { correct: 0, wrong: 0 };
       return { q: q, s: s, fail: Number(s.wrong) || 0, domain: AIP.questionDomain ? AIP.questionDomain(q) : 0 };
@@ -344,9 +364,11 @@ AIP.quiz = (function () {
     var html = '<div class="hero"><h1>Question stats</h1><p class="lede">Every graded attempt is stored in localStorage. Grouped by exam domain; within each domain, most-missed items appear first.</p></div>';
     html += '<div class="stats-grid">';
     html += '<div class="stat"><div class="n">' + summary.total + '</div><div class="l">Questions in bank</div></div>';
-    html += '<div class="stat"><div class="n">' + summary.certsafari + '</div><div class="l">CertSafari</div></div>';
+    html += '<div class="stat"><div class="n stat-correct">' + performance.correct + '</div><div class="l">Correct answers</div></div>';
+    html += '<div class="stat"><div class="n stat-wrong">' + performance.wrong + '</div><div class="l">Wrong answers</div></div>';
     html += '<div class="stat"><div class="n">' + attempted.length + '</div><div class="l">Attempted</div></div>';
     html += '</div>';
+    if (AIP.renderPerformanceChart) html += AIP.renderPerformanceChart(performance);
     html += '<div class="chapter-actions"><button type="button" class="btn danger" data-act="reset-quiz">Reset all quiz stats</button><a class="btn" href="#/exam">Full mock exam</a><a class="btn" href="#/bank">Question bank</a></div>';
     if (AIP.groupByDomain) {
       var grouped = AIP.groupByDomain(rows.map(function (r) { return r.q; }));
@@ -362,7 +384,7 @@ AIP.quiz = (function () {
         domainRows.forEach(function (r) {
           var stem = String(r.q.stem || "");
           var sub = r.q.subdomain ? '<span style="display:block;font-size:12px;color:var(--muted);margin-top:2px">' + AIP.escape(r.q.subdomain) + '</span>' : "";
-          html += '<a class="weak-row" href="#/exam?id=' + encodeURIComponent(r.q.id || "") + '"><span>' + AIP.escape(r.q.id) + ' · ' + AIP.escape(stem.slice(0, 90)) + (stem.length > 90 ? "…" : "") + sub + '</span><span>' + (Number(r.s.correct) || 0) + ' right</span><span>' + (Number(r.s.wrong) || 0) + ' wrong</span></a>';
+          html += '<a class="weak-row" href="#/exam?id=' + encodeURIComponent(r.q.id || "") + '"><span>' + AIP.escape(r.q.id) + ' · ' + AIP.escape(stem.slice(0, 90)) + (stem.length > 90 ? "…" : "") + sub + '</span><span class="answer-count correct">' + (Number(r.s.correct) || 0) + ' right</span><span class="answer-count wrong">' + (Number(r.s.wrong) || 0) + ' wrong</span></a>';
         });
         html += '</div></details>';
       });
