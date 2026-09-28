@@ -17,7 +17,9 @@ High-level map of the monorepo (stacks: CodeStep UI in **`frontend/`**, Bun-test
 | [`java/`](java/README.md) | Static HTML/CSS/JS **Java learning hub** — Ubuntu-only Java 21 LTS curriculum from setup through methods, objects, arrays, strings, collections, exceptions, I/O, debugging, testing, build tools, Git, REST, UML, JVM memory, design patterns, and practice projects; open [`java/index.html`](java/index.html). |
 | [`certificates/aws-genai-pro/`](certificates/aws-genai-pro/README.md) | Static HTML/CSS/JS **AIP-C01** prep. Example-first chapters around one company chat, quizzes, and a mock exam. Open [`certificates/aws-genai-pro/index.html`](certificates/aws-genai-pro/index.html). |
 | [`spring-boot-system-design/`](spring-boot-system-design/README.md) | Step-by-step Java, Spring Boot, Docker, monolith, messaging, and microservices backend curriculum. |
+| [`e2e-project/`](e2e-project/README.md) | **Beginner todo app** — HTML/CSS/JS + Spring Boot + PostgreSQL with handwritten SQL (no Hibernate). Run with `make` in that folder. |
 | [`projects/`](projects/README.md) | **Beginner project curriculum** — four scaffolded learning projects (Weather, Docker, CLI, React) with docs only; you write the code. |
+| [`cleaning-projects/`](cleaning-projects/README.md) | **Code for Cleaning** — two-week Java-focused task rounds traded for bathroom cleaning. Rules, a beginner setup guide, and round briefs; solutions stay local. |
 | [`AGENTS.md`](AGENTS.md) | Short entry for **AI agents and automation** (stack summary, `.cursor/` layout); full navigation stays in this README. |
 | [`Makefile`](Makefile) | Root **`make`** targets wrapping **Bun** tests for `beginner-js/`. |
 
@@ -43,7 +45,9 @@ learning-project/
 ├── java/                     # Java learning hub (index.html)
 ├── certificates/aws-genai-pro/ # AIP-C01 GenAI Professional prep (index.html)
 ├── spring-boot-system-design/# Java/Spring/Docker system-design curriculum
+├── e2e-project/              # Beginner todo: HTML/CSS/JS + Spring Boot + Postgres
 ├── projects/                 # Beginner 4-project curriculum (docs + scaffolding)
+├── cleaning-projects/        # Code for Cleaning: 2-week task rounds (docs only)
 └── README.md
 ```
 

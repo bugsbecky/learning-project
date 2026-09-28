@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven is the build tool. This file lists:
+  - which Java version we compile for
+  - which libraries we need (Spring Web, JDBC, PostgreSQL)
+
+  We do NOT use spring-boot-starter-data-jpa.
+  That starter pulls in Hibernate, which writes SQL for you.
+  This project writes SQL by hand so you can see Create / Read / Update / Delete.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.learning</groupId>
+  <artifactId>todo-api</artifactId>
+  <version>0.1.0</version>
+  <name>todo-api</name>
+  <description>Beginner todo API: Spring Boot + handwritten SQL (no Hibernate)</description>
+
+  <properties>
+    <java.version>21</java.version>
+  </properties>
+
+  <dependencies>
+    <!-- HTTP server: maps URLs to Java methods and JSON to objects. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- JdbcTemplate: a small helper that runs SQL you write. Not Hibernate. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- Talks the PostgreSQL network protocol. -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>
