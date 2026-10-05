@@ -1,7 +1,11 @@
 public class Main {
     public static void main(String[] args) {
-        new Input();
-        new RandomGenerator();
+        Input input = new Input();
+        int requestedPasswordLength = input.getRequestedPasswordLength();
+        
+        RandomGenerator randomGenerator = new RandomGenerator();
+        int randomNumber = randomGenerator.getRandomNumber(requestedPasswordLength);
+        
         new PrintRandomNumber();
     }
 }
