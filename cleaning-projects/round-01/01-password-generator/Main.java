@@ -4,7 +4,7 @@ public class Main {
         int requestedPasswordLength = input.getRequestedPasswordLength();
         
         RandomGenerator randomGenerator = new RandomGenerator();
-        int randomNumber = randomGenerator.getRandomNumber(requestedPasswordLength);
+        String password = randomGenerator.getRandomNumber(requestedPasswordLength);
         
         new PrintRandomNumber();
     }

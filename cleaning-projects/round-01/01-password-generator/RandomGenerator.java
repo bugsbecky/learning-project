@@ -5,7 +5,7 @@ public class RandomGenerator {
     static char[] characters =  { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k' +
     'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
 
-    public int getRandomNumber(int length) {
+    public String getRandomNumber(int length) {
         
         String[][] digitOptions = {
             {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
@@ -16,13 +16,32 @@ public class RandomGenerator {
         };
 
         Random randomNumber = new Random();
+
+        StringBuilder passwordBuilder;
         
         for(int i = 0; i < length; i++) {
             //später nur die reihen, zu denen User y gesagt hat
             int pickedInteger = randomNumber.nextInt(3);
+
             if(pickedInteger == 0) {
-                int pickedLetter = randomNumber.nextInt(26);
+                int pickedLetterInteger = randomNumber.nextInt(26);
+
+                String pickedLetter = digitOptions[pickedInteger][pickedLetterInteger];
+
+                passwordBuilder.append(pickedLetter);
+                return passwordBuilder.toString();
             }
+
+            if(pickedInteger == 1) {
+                int pickedNumberInteger = randomNumber.nextInt(10);
+                String pickedLetter = digitOptions[pickedInteger][pickedNumberInteger];
+            }
+
+            if(pickedInteger == 2) {
+                int pickedDigitInteger = randomNumber.nextInt(13);
+                String pickedLetter = digitOptions[pickedInteger][pickedDigitInteger];
+            }
+            
             
         }
         
